@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupportX — Complete Step-by-Step Setup Guide</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
+    
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --code-bg: #0f172a;
+      --code-color: #38bdf8;
+      --success: #16a34a;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      background-color: var(--bg);
+      margin: 0;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 50px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border);
+    }
+
+    .header {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      color: var(--primary-dark);
+      font-size: 28px;
+      margin: 0 0 10px 0;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+      margin: 0;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #dbeafe;
+      color: var(--primary);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      color: var(--text);
+      margin-top: 35px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .step-number {
+      background: var(--primary);
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    p, li {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    ul, ol {
+      padding-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    code {
+      font-family: 'Consolas', 'Courier New', monospace;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    pre {
+      background: var(--code-bg);
+      color: var(--code-color);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 15px 0;
+    }
+
+    .callout {
+      background: #eff6ff;
+      border-left: 4px solid var(--primary);
+      padding: 15px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+    }
+
+    .callout-success {
+      background: #f0fdf4;
+      border-left-color: var(--success);
+    }
+
+    .callout title {
+      font-weight: 600;
+      color: var(--text);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .print-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      float: right;
+      transition: background 0.2s;
+    }
+
+    .print-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .container {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .print-btn {
+        display: none;
+      }
+      pre {
+        background: #1e293b !important;
+        color: #38bdf8 !important;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+
+    <div class="header">
+      <h1>SupportX Setup Guide</h1>
+      <p class="subtitle">Complete step-by-step instructions from Zip Extraction to Running <code>npm run dev</code></p>
+      <span class="badge">MERN Stack Enterprise Help Desk</span>
+    </div>
+
+    <!-- STEP 1 -->
+    <h2><span class="step-number">1</span> Extracting the Zip File</h2>
+    <p>Follow these steps to extract your project files properly on Windows:</p>
+    <ol>
+      <li>Locate the <code>SupportX.zip</code> (or project zip file) on your computer.</li>
+      <li>Right-click the zip file and select <strong>Extract All...</strong></li>
+      <li>Set the destination folder path to your target directory (e.g., <code>D:\project\SupportX</code>).</li>
+      <li>Click <strong>Extract</strong>.</li>
+      <li>Ensure your directory structure looks like this:
+        <pre>D:\project\SupportX\
+├── backend\
+│   └── backend4\
+│       ├── server.js
+│       ├── package.json
+│       └── .env
+└── frontend\
+    ├── package.json
+    └── src\</pre>
+      </li>
+    </ol>
+
+    <!-- STEP 2 -->
+    <h2><span class="step-number">2</span> Prerequisites Check</h2>
+    <p>Ensure you have the required runtime installed on your machine:</p>
+    <ul>
+      <li><strong>Node.js (v18.0 or higher):</strong> Verify by opening Command Prompt or PowerShell and running:
+        <pre>node -v</pre>
+      </li>
+      <li><strong>npm (v9.0 or higher):</strong> Verify by running:
+        <pre>npm -v</pre>
+      </li>
+    </ul>
+
+    <!-- STEP 3 -->
+    <h2><span class="step-number">3</span> Backend Configuration & Startup</h2>
+    <p>Run the backend API server (Node.js + Express + MongoDB Atlas):</p>
+    <ol>
+      <li>Open a Terminal / Command Prompt window.</li>
+      <li>Navigate to the backend folder:
+        <pre>cd D:\project\SupportX\backend\backend4</pre>
+      </li>
+      <li>Install backend dependencies:
+        <pre>npm install</pre>
+      </li>
+      <li>Verify your <code>.env</code> configuration file at <code>D:\project\SupportX\backend\backend4\.env</code>:
+        <pre>PORT=5000
+MONGO_URI=mongodb+srv://atharvgiri07:giri1234@cluster0.9c3ezdr.mongodb.net/smartdesk?retryWrites=true&w=majority&appName=Cluster0
+JWT_SECRET=replace_this_with_a_long_random_string
+JWT_EXPIRE=7d
+GEMINI_API_KEY=your_gemini_api_key_here
+CLIENT_URL=http://localhost:5173</pre>
+      </li>
+      <li>Start the backend server:
+        <pre>node server.js</pre>
+      </li>
+    </ol>
+
+    <div class="callout callout-success">
+      <strong>✅ Expected Backend Output:</strong>
+      <pre>🖥️  SmartDesk server running on port 5000
+✅ MongoDB Connected: ac-ppqpmzv-shard-00-00.9c3ezdr.mongodb.net</pre>
+    </div>
+
+    <!-- STEP 4 -->
+    <h2><span class="step-number">4</span> Frontend Setup & Running Vite</h2>
+    <p>Run the frontend client application (React 18 + Vite):</p>
+    <ol>
+      <li>Open a <strong>NEW / Second Terminal window</strong> (keep the backend terminal running).</li>
+      <li>Navigate to the frontend folder:
+        <pre>cd D:\project\SupportX\frontend</pre>
+      </li>
+      <li>Install frontend dependencies:
+        <pre>npm install</pre>
+      </li>
+      <li>Start the Vite development server:
+        <pre>npm run dev</pre>
+      </li>
+    </ol>
+
+    <div class="callout callout-success">
+      <strong>✅ Expected Frontend Output:</strong>
+      <pre>  VITE v5.4.21  ready in 867 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://10.144.1.60:5173/</pre>
+    </div>
+
+    <!-- STEP 5 -->
+    <h2><span class="step-number">5</span> Accessing & Testing the Application</h2>
+    <ol>
+      <li>Open your web browser (Chrome, Edge, Brave, etc.).</li>
+      <li>Navigate to <code>http://localhost:5173</code></li>
+      <li>Sign in using test administrator credentials:
+        <ul>
+          <li><strong>Email:</strong> <code>verify@test.com</code></li>
+          <li><strong>Password:</strong> <code>verify123</code></li>
+        </ul>
+        <em>Or register a new account on the <strong>Register</strong> page.</em>
+      </li>
+      <li>Verify core workflows:
+        <ul>
+          <li><strong>Create Ticket:</strong> Create a new ticket and verify auto-assignment.</li>
+          <li><strong>All Tickets:</strong> View status filters, SLA due dates, and overdue badges.</li>
+          <li><strong>Dashboard:</strong> View live metrics, bar/pie charts, and top performers.</li>
+          <li><strong>Leaderboard:</strong> View employee score ranks with 🥇🥈🥉 medal icons.</li>
+        </ul>
+      </li>
+    </ol>
+
+    <!-- STEP 6 -->
+    <h2><span class="step-number">6</span> Common Troubleshooting</h2>
+    <ul>
+      <li><strong>Error: Port 5000 is already in use:</strong>
+        <p>Kill the existing node process using Command Prompt:</p>
+        <pre>taskkill /f /im node.exe</pre>
+      </li>
+      <li><strong>MongoDB Connection Failed:</strong>
+        <p>Ensure your internet connection is active and your IP is whitelisted in MongoDB Atlas Network Access.</p>
+      </li>
+      <li><strong>Module Not Found Error:</strong>
+        <p>Re-run <code>npm install</code> in both `backend4` and `frontend` folders.</p>
+      </li>
+    </ul>
+
+    <div style="text-align: center; margin-top: 40px; color: var(--text-muted); font-size: 13px;">
+      SupportX Project Documentation — Generated for PDF / Print Output
+    </div>
+
+  </div>
+
+</body>
+</html>
