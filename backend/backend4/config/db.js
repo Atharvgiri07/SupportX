@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
 
-// Force reliable public DNS resolvers (Cloudflare + Google).
-// Fixes "querySrv ECONNREFUSED" — a known Windows/Node.js issue where the
-// SRV DNS lookup that mongodb+srv:// needs fails even though your internet works fine.
-require('node:dns/promises').setServers(['1.1.1.1', '8.8.8.8']);
+if (process.platform === 'win32') {
+  try {
+    require('node:dns/promises').setServers(['1.1.1.1', '8.8.8.8']);
+  } catch (err) {
+    // Ignore DNS setServers error on local machine
+  }
+}
 
 const connectDB = async () => {
   try {
