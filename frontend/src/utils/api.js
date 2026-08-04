@@ -13,11 +13,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// If the token is invalid/expired, clear it and send the user back to login
+// If token expired on protected routes, redirect to login (do not redirect during login attempt)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+    if (error.response?.status === 401 && !isAuthPage) {
       localStorage.removeItem('supportx_token');
       localStorage.removeItem('supportx_user');
       window.location.href = '/login';
