@@ -165,8 +165,11 @@ const resolveTicket = async (req, res) => {
 // @access Private/Admin
 const rateTicket = async (req, res) => {
   try {
-    const { rating } = req.body;
-    if (!rating || rating < 1 || rating > 5) {
+    const { rating, feedback } = req.body;
+    const rateVal = rating || req.body.customerRating;
+    const feedbackVal = feedback || req.body.customerFeedback || '';
+
+    if (!rateVal || rateVal < 1 || rateVal > 5) {
       return res.status(400).json({ message: 'Rating must be a number between 1 and 5' });
     }
 
@@ -177,7 +180,9 @@ const rateTicket = async (req, res) => {
       return res.status(400).json({ message: 'Only resolved tickets can be rated' });
     }
 
-    ticket.rating = rating;
+    ticket.rating = rateVal;
+    ticket.customerRating = rateVal;
+    ticket.customerFeedback = feedbackVal;
     await ticket.save();
 
     res.json(ticket);

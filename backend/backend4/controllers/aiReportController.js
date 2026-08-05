@@ -8,25 +8,28 @@ const generateWithGemini = require('../config/gemini');
 const generateAIReport = async (req, res) => {
   try {
     if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
-      return res.status(500).json({ message: 'GEMINI_API_KEY is not set in your .env file yet' });
+      return res.status(500).json({ message: 'GEMINI_API_KEY is not set in your environment variables' });
     }
 
     const employee = await User.findById(req.params.id).populate('department', 'name');
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
 
-    const resolvedTickets = await Ticket.find({ assignedTo: employee._id, status: 'Resolved' });
-    const avgResolutionHours =
-      resolvedTickets.length > 0
-        ? (
-            resolvedTickets.reduce((sum, t) => sum + (new Date(t.resolvedAt) - new Date(t.createdAt)), 0) /
-            resolvedTickets.length /
-            (1000 * 60 * 60)
-          ).toFixed(1)
-        : 'N/A';
+    const resolvedTickets = await Ticket.find({ assignedTo: employee._id, status: { $in: ['Resolved', 'Closed'] } });
+    
+    let avgResolutionHours = 'N/A';
+    if (resolvedTickets.length > 0) {
+      const totalHours = resolvedTickets.reduce((sum, t) => {
+        const resolveTime = t.resolvedAt ? new Date(t.resolvedAt) : new Date(t.updatedAt || t.createdAt);
+        const createTime = new Date(t.createdAt);
+        const diffMs = Math.max(0, resolveTime - createTime);
+        return sum + diffMs / (1000 * 60 * 60);
+      }, 0);
+      avgResolutionHours = (totalHours / resolvedTickets.length).toFixed(1);
+    }
 
     const prompt = `Analyze this employee's ticket data:
 Name: ${employee.name}, Department: ${employee.department ? employee.department.name : 'Unassigned'}
-Tickets Resolved: ${employee.totalResolved}
+Tickets Resolved: ${employee.totalResolved || resolvedTickets.length}
 Avg Resolution Time: ${avgResolutionHours} hours
 Points: ${employee.performanceScore}
 

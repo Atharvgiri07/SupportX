@@ -63,17 +63,21 @@ const getMonthlyPerformance = async (req, res) => {
         $match: {
           assignedTo: userId,
           status: { $in: ['Resolved', 'Closed'] },
-          resolvedAt: { $gte: startDate }
+          $or: [
+            { resolvedAt: { $gte: startDate } },
+            { resolvedAt: { $exists: false }, updatedAt: { $gte: startDate } },
+            { resolvedAt: null, updatedAt: { $gte: startDate } }
+          ]
         }
       },
       {
         $group: {
-          _id: { $dateToString: { format: '%Y-%m', date: '$resolvedAt' } },
+          _id: { $dateToString: { format: '%Y-%m', date: { $ifNull: ['$resolvedAt', '$updatedAt'] } } },
           resolved: { $sum: 1 },
           points: { $sum: '$pointsAwarded' },
           avgHours: {
             $avg: {
-              $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 3600000]
+              $divide: [{ $subtract: [{ $ifNull: ['$resolvedAt', '$updatedAt'] }, '$createdAt'] }, 3600000]
             }
           }
         }

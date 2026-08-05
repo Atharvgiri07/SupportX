@@ -23,8 +23,16 @@ const CreateTicket = () => {
           api.get('/departments'),
           api.get('/categories')
         ]);
-        setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
-        setCategories(Array.isArray(catRes.data) ? catRes.data.filter(c => c.isActive !== false) : []);
+        const loadedDepts = Array.isArray(deptRes.data) ? deptRes.data : [];
+        const loadedCats = Array.isArray(catRes.data) ? catRes.data.filter(c => c.isActive !== false) : [];
+        setDepartments(loadedDepts);
+        setCategories(loadedCats);
+
+        setForm(prev => ({
+          ...prev,
+          category: prev.category || (loadedCats.length > 0 ? loadedCats[0].name : ''),
+          department: prev.department || (loadedDepts.length > 0 ? loadedDepts[0]._id : ''),
+        }));
       } catch (err) {
         console.error('Failed to fetch dropdown data:', err);
       }
@@ -44,7 +52,13 @@ const CreateTicket = () => {
       const { data } = await api.post('/tickets', form);
       toast.success('Ticket created');
       setAssignmentInfo(data.assignmentInfo);
-      setForm({ title: '', description: '', category: '', priority: 'Medium', department: '' });
+      setForm({
+        title: '',
+        description: '',
+        category: categories.length > 0 ? categories[0].name : '',
+        priority: 'Medium',
+        department: departments.length > 0 ? departments[0]._id : '',
+      });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Could not create ticket');
     } finally {

@@ -41,8 +41,9 @@ const ActivityLogs = () => {
     const fetchLogs = async () => {
       try {
         const { data } = await api.get('/activity-logs');
-        setLogs(data);
-        setFiltered(data);
+        const list = Array.isArray(data) ? data : [];
+        setLogs(list);
+        setFiltered(list);
       } finally {
         setLoading(false);
       }

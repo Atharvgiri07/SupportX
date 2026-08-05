@@ -40,7 +40,7 @@ const getChartData = async (req, res) => {
         },
       },
       { $unwind: { path: '$departmentInfo', preserveNullAndEmptyArrays: true } },
-      { $project: { department: '$departmentInfo.name', count: 1, _id: 0 } },
+      { $project: { department: { $ifNull: ['$departmentInfo.name', 'Unassigned'] }, count: 1, _id: 0 } },
     ]);
 
     res.json({ byStatus, byPriority, byDepartment });

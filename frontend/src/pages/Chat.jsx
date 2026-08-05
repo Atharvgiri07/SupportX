@@ -175,7 +175,11 @@ const Chat = () => {
                 return (
                   <div key={msg._id} className={`chat-message${isMe ? ' is-me' : ''}`}>
                     <div className="chat-avatar">
-                      {msg.sender?.name?.charAt(0).toUpperCase() || '?'}
+                      {msg.sender?.avatar ? (
+                        <img src={msg.sender.avatar} alt={msg.sender.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        msg.sender?.name?.charAt(0).toUpperCase() || '?'
+                      )}
                     </div>
                     <div className="chat-bubble">
                       <div className="chat-bubble-header">
