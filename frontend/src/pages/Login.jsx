@@ -21,7 +21,7 @@ const Login = () => {
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(email.trim().toLowerCase(), password);
       toast.success('Welcome back');
       navigate('/');
     } catch (err) {
