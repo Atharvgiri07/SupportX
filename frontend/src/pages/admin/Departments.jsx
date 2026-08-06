@@ -15,7 +15,7 @@ const Departments = () => {
   const fetchDepartments = async () => {
     try {
       const { data } = await api.get('/departments');
-      setDepartments(data);
+      setDepartments(Array.isArray(data) ? data : []);
     } catch (err) {
       toast.error('Could not load departments');
     } finally {
@@ -94,7 +94,7 @@ const Departments = () => {
             </div>
             {dept.description && <p className="dept-card-desc">{dept.description}</p>}
             <p className="dept-card-count">{dept.employees?.length || 0} employee(s)</p>
-            {dept.employees?.length > 0 && (
+            {Array.isArray(dept.employees) && dept.employees.length > 0 && (
               <ul className="dept-employee-list">
                 {dept.employees.map((emp) => (
                   <li key={emp._id}>

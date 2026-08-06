@@ -13,8 +13,10 @@ const Employees = () => {
   const fetchAll = async () => {
     try {
       const [empRes, deptRes] = await Promise.all([api.get('/performance/all'), api.get('/departments')]);
-      setEmployees(empRes.data);
-      setDepartments(deptRes.data);
+      setEmployees(Array.isArray(empRes.data) ? empRes.data : []);
+      setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
+    } catch (err) {
+      toast.error('Could not load employee data');
     } finally {
       setLoading(false);
     }

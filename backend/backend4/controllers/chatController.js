@@ -4,7 +4,7 @@ const User = require('../models/User');
 const getMessages = async (req, res) => {
   try {
     const { room } = req.params;
-    const page = parseInt(req.query.page) || 1;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = 50;
     const messages = await Message.find({ chatRoom: room })
       .populate('sender', 'name avatar role')
@@ -21,7 +21,7 @@ const sendMessage = async (req, res) => {
   try {
     const { room } = req.params;
     const { text } = req.body;
-    if (!text || !text.trim()) return res.status(400).json({ message: 'Message text is required' });
+    if (!text || typeof text !== 'string' || !text.trim()) return res.status(400).json({ message: 'Message text is required' });
     const message = await Message.create({
       sender: req.user._id,
       chatRoom: room,

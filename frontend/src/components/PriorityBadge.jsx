@@ -1,8 +1,8 @@
 const PRIORITY_STYLES = {
-  Low: { bg: '#f1f5f9', color: '#475569' },
-  Medium: { bg: '#dbeafe', color: '#1e40af' },
-  High: { bg: '#ffedd5', color: '#9a3412' },
-  Critical: { bg: '#fee2e2', color: '#991b1b' },
+  Low: { bg: 'rgba(148, 163, 184, 0.18)', color: '#94a3b8' },
+  Medium: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' },
+  High: { bg: 'rgba(249, 115, 22, 0.15)', color: '#f97316' },
+  Critical: { bg: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' },
 };
 
 const PriorityBadge = ({ priority }) => {

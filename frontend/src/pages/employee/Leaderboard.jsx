@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import api from '../../utils/api';
 import Loader from '../../components/Loader';
 import { useAuth } from '../../context/AuthContext';
@@ -13,7 +14,9 @@ const Leaderboard = () => {
     const fetchLeaderboard = async () => {
       try {
         const { data } = await api.get('/performance/leaderboard');
-        setRows(data);
+        setRows(Array.isArray(data) ? data : []);
+      } catch (err) {
+        toast.error('Could not load leaderboard');
       } finally {
         setLoading(false);
       }

@@ -4,6 +4,7 @@ import PriorityBadge from './PriorityBadge';
 import './TicketCard.css';
 
 const TicketCard = ({ ticket }) => {
+  if (!ticket) return null;
   return (
     <Link to={`/tickets/${ticket._id}`} className="ticket-card card">
       <div className="ticket-card-top">

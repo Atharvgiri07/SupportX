@@ -39,8 +39,8 @@ const Calendar = () => {
     }
   }, [user]);
 
-  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const prevMonth = () => { setSelectedDate(null); setCurrentDate(new Date(year, month - 1, 1)); };
+  const nextMonth = () => { setSelectedDate(null); setCurrentDate(new Date(year, month + 1, 1)); };
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();

@@ -7,7 +7,7 @@ const Ticket = require('../models/Ticket');
 const addComment = async (req, res) => {
   try {
     const { text, isResolution } = req.body;
-    if (!text) return res.status(400).json({ message: 'Comment text is required' });
+    if (!text || (typeof text === 'string' && !text.trim())) return res.status(400).json({ message: 'Comment text is required' });
 
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
@@ -19,6 +19,7 @@ const addComment = async (req, res) => {
       isResolution: !!isResolution,
     });
 
+    if (!Array.isArray(ticket.comments)) ticket.comments = [];
     ticket.comments.push(comment._id);
     if (ticket.status === 'Open') ticket.status = 'In Progress';
     await ticket.save();
@@ -39,7 +40,7 @@ const deleteComment = async (req, res) => {
     if (!comment) return res.status(404).json({ message: 'Comment not found' });
 
     // Only the comment's author or an admin can delete it
-    if (comment.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (comment.user?.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }
 

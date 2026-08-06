@@ -183,7 +183,7 @@ const Chat = () => {
                     </div>
                     <div className="chat-bubble">
                       <div className="chat-bubble-header">
-                        <span className="chat-sender">{isMe ? 'You' : msg.sender?.name}</span>
+                        <span className="chat-sender">{isMe ? 'You' : (msg.sender?.name || 'Unknown')}</span>
                         <span className="chat-time">{formatTime(msg.createdAt)}</span>
                       </div>
                       <p className="chat-text">{msg.text}</p>

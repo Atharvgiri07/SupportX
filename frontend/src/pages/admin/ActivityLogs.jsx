@@ -44,6 +44,8 @@ const ActivityLogs = () => {
         const list = Array.isArray(data) ? data : [];
         setLogs(list);
         setFiltered(list);
+      } catch (err) {
+        console.error('Failed to load activity logs:', err);
       } finally {
         setLoading(false);
       }

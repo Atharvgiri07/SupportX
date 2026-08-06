@@ -104,25 +104,20 @@ const getMonthlyPerformance = async (req, res) => {
 const getMyBadges = async (req, res) => {
   try {
     await seedBadges();
-    const user = await User.findById(req.user._id).populate('badges.badge');
+    const user = await User.findById(req.user._id).populate('badges');
     const allBadges = await Badge.find();
     
-    const userBadges = user?.badges || [];
-    const earnedIds = userBadges.map(b => b.badge?._id?.toString()).filter(Boolean);
+    const userBadgeIds = (user?.badges || []).map(b => b._id?.toString()).filter(Boolean);
     
-    const result = allBadges.map(badge => {
-      const earned = earnedIds.includes(badge._id.toString());
-      const userBadge = userBadges.find(b => b.badge?._id?.toString() === badge._id.toString());
-      return {
-        _id: badge._id,
-        name: badge.name,
-        description: badge.description,
-        icon: badge.icon,
-        criteria: badge.criteria,
-        earned,
-        earnedAt: userBadge?.earnedAt || null
-      };
-    });
+    const result = allBadges.map(badge => ({
+      _id: badge._id,
+      name: badge.name,
+      description: badge.description,
+      icon: badge.icon,
+      criteria: badge.criteria,
+      earned: userBadgeIds.includes(badge._id.toString()),
+      earnedAt: null
+    }));
     
     res.json(result);
   } catch (error) {
