@@ -119,6 +119,20 @@ const TicketDetail = () => {
           <span><strong>Department:</strong> {ticket.department?.name || 'Unassigned'}</span>
           <span><strong>Assigned To:</strong> {ticket.assignedTo?.name || 'Unassigned'}</span>
           <span><strong>Created:</strong> {new Date(ticket.createdAt).toLocaleString()}</span>
+          {ticket.dueDate && (
+            <div className="detail-field">
+              <span className="detail-label">Due Date</span>
+              <span style={{
+                color: (ticket.status !== 'Resolved' && ticket.status !== 'Closed' && new Date(ticket.dueDate) < new Date())
+                  ? '#ef4444' : 'var(--color-text)',
+                fontWeight: (ticket.status !== 'Resolved' && ticket.status !== 'Closed' && new Date(ticket.dueDate) < new Date())
+                  ? 700 : 400,
+              }}>
+                {new Date(ticket.dueDate).toLocaleString()}
+                {ticket.status !== 'Resolved' && ticket.status !== 'Closed' && new Date(ticket.dueDate) < new Date() && ' ⚠️ OVERDUE'}
+              </span>
+            </div>
+          )}
         </div>
 
         {!isResolved && (

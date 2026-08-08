@@ -151,7 +151,10 @@ const CreateTicket = () => {
 
       {assignmentInfo && (
         <div className="card create-ticket-result" style={{ marginTop: 20, padding: 16 }}>
-          <strong>Auto-assign result:</strong> {assignmentInfo}
+          <p><strong>Auto-assign result:</strong> {assignmentInfo}</p>
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 8 }}>
+            Due date is auto-calculated based on priority SLA: Critical=4hrs, High=24hrs, Medium=48hrs, Low=72hrs
+          </p>
         </div>
       )}
     </div>

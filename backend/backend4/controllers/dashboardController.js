@@ -7,15 +7,19 @@ const Department = require('../models/Department');
 // @access Private/Admin
 const getStats = async (req, res) => {
   try {
-    const [totalTickets, openTickets, resolvedTickets, totalEmployees, totalDepartments] = await Promise.all([
+    const [totalTickets, openTickets, resolvedTickets, overdueTickets, totalEmployees, totalDepartments] = await Promise.all([
       Ticket.countDocuments(),
       Ticket.countDocuments({ status: { $in: ['Open', 'In Progress'] } }),
       Ticket.countDocuments({ status: 'Resolved' }),
+      Ticket.countDocuments({
+        status: { $in: ['Open', 'In Progress'] },
+        dueDate: { $ne: null, $lt: new Date() },
+      }),
       User.countDocuments({ role: 'employee' }),
       Department.countDocuments(),
     ]);
 
-    res.json({ totalTickets, openTickets, resolvedTickets, totalEmployees, totalDepartments });
+    res.json({ totalTickets, openTickets, resolvedTickets, overdueTickets, totalEmployees, totalDepartments });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

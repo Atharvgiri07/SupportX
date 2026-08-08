@@ -23,6 +23,11 @@ const createTicket = async (req, res) => {
 
     const assignee = await findBestAssignee(department);
 
+    // Auto-calculate dueDate based on priority (SLA deadlines)
+    const SLA_HOURS = { Low: 72, Medium: 48, High: 24, Critical: 4 };
+    const slaHours = SLA_HOURS[priority] || SLA_HOURS.Medium;
+    const dueDate = new Date(Date.now() + slaHours * 60 * 60 * 1000);
+
     const ticket = await Ticket.create({
       title,
       description,
@@ -31,6 +36,7 @@ const createTicket = async (req, res) => {
       department,
       createdBy: req.user._id,
       assignedTo: assignee ? assignee._id : null,
+      dueDate,
     });
 
     // Keep the assignee's open-ticket counter in sync immediately,
@@ -135,7 +141,7 @@ const resolveTicket = async (req, res) => {
       return res.status(400).json({ message: 'Ticket is already resolved' });
     }
 
-    const points = calculatePoints(ticket.priority, ticket.createdAt);
+    const points = calculatePoints(ticket.priority, ticket.createdAt, ticket.dueDate);
 
     ticket.status = 'Resolved';
     ticket.resolvedAt = new Date();
