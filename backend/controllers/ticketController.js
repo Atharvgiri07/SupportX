@@ -1,9 +1,11 @@
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
 const Department = require('../models/Department');
+const Notification = require('../models/Notification');
 const findBestAssignee = require('../utils/autoAssign');
 const calculatePoints = require('../utils/calculatePoints');
 const { checkAndAwardBadges } = require('../utils/checkBadges');
+const logActivity = require('../utils/logActivity');
 
 // @desc   Create a ticket — auto-assigns it to the best available employee
 // @route  POST /api/tickets
@@ -29,9 +31,9 @@ const createTicket = async (req, res) => {
     const dueDate = new Date(Date.now() + slaHours * 60 * 60 * 1000);
 
     const ticket = await Ticket.create({
-      title,
-      description,
-      category,
+      title: title.trim(),
+      description: description.trim(),
+      category: category.trim(),
       priority: priority || 'Medium',
       department,
       createdBy: req.user._id,
@@ -39,12 +41,28 @@ const createTicket = async (req, res) => {
       dueDate,
     });
 
-    // Keep the assignee's open-ticket counter in sync immediately,
-    // so the NEXT ticket created sees the updated workload.
+    // Keep assignee's open-ticket counter in sync immediately
     if (assignee) {
       assignee.currentOpen += 1;
       await assignee.save();
+
+      // Create notification for assigned employee
+      await Notification.create({
+        user: assignee._id,
+        title: 'New Ticket Assigned',
+        message: `You have been assigned ticket "${ticket.title}" (${ticket.priority} priority)`,
+        type: 'assignment',
+        link: `/tickets/${ticket._id}`,
+      });
     }
+
+    // Log Activity
+    await logActivity(
+      req.user._id,
+      'Ticket Created',
+      `Ticket "${ticket.title}" created and assigned to ${assignee ? assignee.name : 'Unassigned'}`,
+      req.ip
+    );
 
     const populatedTicket = await Ticket.findById(ticket._id)
       .populate('assignedTo', 'name email performanceScore currentOpen')
@@ -122,8 +140,17 @@ const updateTicketStatus = async (req, res) => {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
+    const oldStatus = ticket.status;
     ticket.status = status;
     await ticket.save();
+
+    await logActivity(
+      req.user._id,
+      'Ticket Status Updated',
+      `Ticket "${ticket.title}" status changed from ${oldStatus} to ${status}`,
+      req.ip
+    );
+
     res.json(ticket);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -157,8 +184,26 @@ const resolveTicket = async (req, res) => {
         employee.currentOpen = Math.max(0, employee.currentOpen - 1);
         await employee.save();
         newBadges = await checkAndAwardBadges(employee._id);
+
+        // Notify creator
+        if (ticket.createdBy && ticket.createdBy.toString() !== employee._id.toString()) {
+          await Notification.create({
+            user: ticket.createdBy,
+            title: 'Ticket Resolved',
+            message: `Your ticket "${ticket.title}" has been resolved by ${employee.name}`,
+            type: 'success',
+            link: `/tickets/${ticket._id}`,
+          });
+        }
       }
     }
+
+    await logActivity(
+      req.user._id,
+      'Ticket Resolved',
+      `Ticket "${ticket.title}" resolved (+${points} points)`,
+      req.ip
+    );
 
     res.json({ message: 'Ticket resolved', ticket, pointsAwarded: points, newBadges });
   } catch (error) {
@@ -166,9 +211,9 @@ const resolveTicket = async (req, res) => {
   }
 };
 
-// @desc   Rate a resolved ticket (1-5) — admin rates the quality of resolution
+// @desc   Rate a resolved ticket (1-5)
 // @route  PUT /api/tickets/:id/rate
-// @access Private/Admin
+// @access Private
 const rateTicket = async (req, res) => {
   try {
     const { rating, feedback } = req.body;
@@ -204,6 +249,14 @@ const deleteTicket = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+
+    // Decrement open ticket count if unresolved
+    if (ticket.assignedTo && (ticket.status === 'Open' || ticket.status === 'In Progress')) {
+      await User.findByIdAndUpdate(ticket.assignedTo, { $inc: { currentOpen: -1 } });
+    }
+
+    await logActivity(req.user._id, 'Ticket Deleted', `Ticket "${ticket.title}" deleted`, req.ip);
+
     await ticket.deleteOne();
     res.json({ message: 'Ticket deleted' });
   } catch (error) {

@@ -1,5 +1,6 @@
 const Comment = require('../models/Comment');
 const Ticket = require('../models/Ticket');
+const logActivity = require('../utils/logActivity');
 
 // @desc   Add a comment to a ticket
 // @route  POST /api/tickets/:id/comments
@@ -15,7 +16,7 @@ const addComment = async (req, res) => {
     const comment = await Comment.create({
       ticket: ticket._id,
       user: req.user._id,
-      text,
+      text: text.trim(),
       isResolution: !!isResolution,
     });
 
@@ -23,6 +24,13 @@ const addComment = async (req, res) => {
     ticket.comments.push(comment._id);
     if (ticket.status === 'Open') ticket.status = 'In Progress';
     await ticket.save();
+
+    await logActivity(
+      req.user._id,
+      'Comment Added',
+      `Comment added on ticket "${ticket.title}"`,
+      req.ip
+    );
 
     const populatedComment = await comment.populate('user', 'name avatar role');
     res.status(201).json(populatedComment);
@@ -39,7 +47,6 @@ const deleteComment = async (req, res) => {
     const comment = await Comment.findById(req.params.id);
     if (!comment) return res.status(404).json({ message: 'Comment not found' });
 
-    // Only the comment's author or an admin can delete it
     if (comment.user?.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }

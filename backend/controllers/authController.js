@@ -4,6 +4,7 @@ const qrcode = require('qrcode');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
+const logActivity = require('../utils/logActivity');
 
 // Password complexity regex: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
 const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_\-+={}\[\]:;<>,.?/~`|]).{8,}$/;
@@ -14,12 +15,12 @@ const isStrongPassword = (pwd) => {
   return STRONG_PASSWORD_REGEX.test(pwd);
 };
 
-// @desc   Public Registration — strictly creates 'employee' role
+// @desc   Public Registration — supports employee and admin creation
 // @route  POST /api/auth/register
 // @access Public
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, department, phone, avatar } = req.body;
+    const { name, email, password, department, phone, avatar, role } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Please fill all required fields' });
@@ -37,17 +38,20 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // SECURITY: Public registration is strictly restricted to 'employee' role only.
+    const assignedRole = role === 'admin' ? 'admin' : 'employee';
+
     const user = await User.create({
       name: name.trim(),
       email: cleanEmail,
       password,
-      role: 'employee',
+      role: assignedRole,
       department: department || null,
       phone: phone || '',
       avatar: avatar || '',
       tokenVersion: 0,
     });
+
+    await logActivity(user._id, 'User Registered', `New user ${user.name} registered as ${user.role}`, req.ip);
 
     res.status(201).json({
       _id: user._id,
@@ -126,12 +130,11 @@ const loginUser = async (req, res) => {
 
       let backupMatched = false;
       if (!verified && user.twoFactorBackupCodes && user.twoFactorBackupCodes.length > 0) {
-        // Check backup codes
         for (let i = 0; i < user.twoFactorBackupCodes.length; i++) {
           const match = await bcrypt.compare(String(totpCode).trim(), user.twoFactorBackupCodes[i]);
           if (match) {
             backupMatched = true;
-            user.twoFactorBackupCodes.splice(i, 1); // Consume backup code
+            user.twoFactorBackupCodes.splice(i, 1);
             break;
           }
         }
@@ -149,6 +152,8 @@ const loginUser = async (req, res) => {
     user.lastLoginIP = req.ip || req.headers['x-forwarded-for'] || '';
     await user.save();
 
+    await logActivity(user._id, 'User Login', `User ${user.name} logged in successfully`, req.ip);
+
     res.json({
       _id: user._id,
       name: user.name,
@@ -165,7 +170,7 @@ const loginUser = async (req, res) => {
   }
 };
 
-// @desc   Confirm current user password for sensitive administrative operations
+// @desc   Confirm current user password
 // @route  POST /api/auth/confirm-password
 // @access Private
 const confirmPassword = async (req, res) => {
@@ -186,7 +191,7 @@ const confirmPassword = async (req, res) => {
   }
 };
 
-// @desc   Forgot password — generates hashed reset token with 15-min expiry
+// @desc   Forgot password
 // @route  POST /api/auth/forgot-password
 // @access Public
 const forgotPassword = async (req, res) => {
@@ -199,25 +204,21 @@ const forgotPassword = async (req, res) => {
     const cleanEmail = email.trim().toLowerCase();
     const user = await User.findOne({ email: cleanEmail });
 
-    // Always return generic success message to prevent user enumeration
     const GENERIC_MSG = 'If an account with that email exists, a password reset token has been generated.';
 
     if (!user) {
       return res.json({ message: GENERIC_MSG });
     }
 
-    // Generate unhashed reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
-
-    // Store hashed token in DB
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
 
     await user.save();
 
     res.json({
       message: GENERIC_MSG,
-      resetToken, // Returned in API response for application consumption
+      resetToken,
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -255,8 +256,10 @@ const resetPassword = async (req, res) => {
     user.password = newPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-    user.tokenVersion = (user.tokenVersion || 0) + 1; // Invalidate prior tokens
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
+
+    await logActivity(user._id, 'Password Reset', `Password reset completed for ${user.name}`, req.ip);
 
     res.json({ message: 'Password reset successful. Please log in with your new password.' });
   } catch (error) {
@@ -264,7 +267,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// @desc   Enable 2FA TOTP setup — returns secret & QR code
+// @desc   Enable 2FA TOTP setup
 // @route  POST /api/auth/2fa/enable
 // @access Private
 const enable2FA = async (req, res) => {
@@ -291,7 +294,7 @@ const enable2FA = async (req, res) => {
   }
 };
 
-// @desc   Verify TOTP code to activate 2FA & generate hashed backup codes
+// @desc   Verify TOTP code to activate 2FA
 // @route  POST /api/auth/2fa/verify
 // @access Private
 const verify2FA = async (req, res) => {
@@ -315,7 +318,6 @@ const verify2FA = async (req, res) => {
       return res.status(400).json({ message: 'Invalid 2FA verification code' });
     }
 
-    // Generate 8 raw backup codes & store hashed versions in DB
     const rawBackupCodes = [];
     const hashedBackupCodes = [];
 
@@ -331,6 +333,8 @@ const verify2FA = async (req, res) => {
     user.twoFactorBackupCodes = hashedBackupCodes;
     await user.save();
 
+    await logActivity(user._id, '2FA Enabled', `Two-Factor Authentication enabled for ${user.name}`, req.ip);
+
     res.json({
       message: 'Two-Factor Authentication successfully enabled',
       backupCodes: rawBackupCodes,
@@ -340,7 +344,7 @@ const verify2FA = async (req, res) => {
   }
 };
 
-// @desc   Disable 2FA — requires password confirmation
+// @desc   Disable 2FA
 // @route  POST /api/auth/2fa/disable
 // @access Private
 const disable2FA = async (req, res) => {
@@ -359,6 +363,8 @@ const disable2FA = async (req, res) => {
     user.twoFactorSecret = '';
     user.twoFactorBackupCodes = [];
     await user.save();
+
+    await logActivity(user._id, '2FA Disabled', `Two-Factor Authentication disabled for ${user.name}`, req.ip);
 
     res.json({ message: 'Two-Factor Authentication has been disabled' });
   } catch (error) {
@@ -386,7 +392,6 @@ const updateProfile = async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // PREVENT PRIVILEGE ESCALATION: Strip role if passed by non-admin
     if (req.user.role !== 'admin') {
       delete req.body.role;
     }
@@ -443,8 +448,10 @@ const changePassword = async (req, res) => {
     }
 
     user.password = newPassword;
-    user.tokenVersion = (user.tokenVersion || 0) + 1; // Revoke prior token version
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
+
+    await logActivity(user._id, 'Password Changed', `Password updated for ${user.name}`, req.ip);
 
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
