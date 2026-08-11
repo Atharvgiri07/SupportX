@@ -16,8 +16,13 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password });
+  const login = async (email, password, totpCode) => {
+    const { data } = await api.post('/auth/login', { email, password, totpCode });
+
+    if (data.require2FA) {
+      return data; // Requires 2FA verification challenge step
+    }
+
     localStorage.setItem('supportx_token', data.token);
     localStorage.setItem('supportx_user', JSON.stringify(data));
     setUser(data);
@@ -46,8 +51,10 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const isAdmin = () => user?.role === 'admin';
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, updateUserState, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, updateUserState, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
