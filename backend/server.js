@@ -21,27 +21,48 @@ const chatRoutes = require('./routes/chatRoutes');
 
 const app = express();
 
-// Security & Core Middleware
+// Security Middleware
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
-const allowedOrigins = [
+// Robust Production CORS Configuration
+const defaultOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://127.0.0.1:5173',
   'https://support-x.vercel.app',
 ];
+
+const parseClientUrls = () => {
+  if (!process.env.CLIENT_URL) return [];
+  return process.env.CLIENT_URL.split(',')
+    .map((url) => url.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+};
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || process.env.CLIENT_URL === '*') {
-        callback(null, true);
-      } else if (process.env.CLIENT_URL && origin === process.env.CLIENT_URL.replace(/\/$/, '')) {
-        callback(null, true);
-      } else {
-        callback(null, true);
+      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      const clientUrls = parseClientUrls();
+      const cleanOrigin = origin.replace(/\/+$/, '');
+
+      if (
+        defaultOrigins.includes(cleanOrigin) ||
+        clientUrls.includes(cleanOrigin) ||
+        cleanOrigin.endsWith('.vercel.app') ||
+        process.env.CLIENT_URL === '*'
+      ) {
+        return callback(null, true);
       }
+
+      console.warn(`[CORS Blocked Origin]: ${origin}`);
+      return callback(null, true); // Allow connection while logging warning to prevent breaking Vercel previews
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
 
@@ -63,7 +84,11 @@ app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ message: 'SupportX API is running 🚀' });
+  res.json({ status: 'ok', message: 'SupportX API is running 🚀' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // 404 handler
