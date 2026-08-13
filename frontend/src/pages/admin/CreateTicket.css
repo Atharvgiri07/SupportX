@@ -1,13 +1,304 @@
-.create-ticket-form {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUPPORTX CREATE TICKET PAGE STYLES (SaaS Enterprise Design System)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.create-ticket-page-root {
+  max-width: 860px;
+  margin: 0 auto;
+  padding-bottom: 40px;
 }
 
-.create-ticket-result {
-  margin-top: 16px;
-  padding: 16px 20px;
+/* Page Header */
+.create-ticket-header {
+  margin-bottom: 24px;
+}
+
+.header-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.header-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px var(--color-primary-tint);
+  flex-shrink: 0;
+}
+
+.header-main-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+
+.header-sub-title {
   font-size: 14px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+/* Container */
+.create-ticket-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Form Card */
+.create-ticket-card {
+  padding: 32px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  animation: fadeSlideUp 0.3s ease-out;
+}
+
+.form-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.form-section-head h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.form-head-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
   background: var(--color-primary-tint);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+/* Form Fields & Icon Wrappers */
+.input-with-icon-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.input-left-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.create-ticket-input,
+.create-ticket-select {
+  width: 100%;
+  height: 44px;
+  padding-left: 44px !important;
+  padding-right: 16px !important;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--color-text);
+  transition: all 0.18s ease;
+}
+
+.create-ticket-select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.create-ticket-input:focus,
+.create-ticket-select:focus,
+.create-ticket-textarea:focus {
+  outline: none;
   border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 3px var(--color-primary-tint);
+}
+
+.create-ticket-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+  transition: all 0.18s ease;
+}
+
+.form-grid-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Interactive Priority Selection Cards */
+.priority-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.priority-card {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.priority-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.priority-card.selected {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.priority-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.priority-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.priority-card-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.priority-sla-tag {
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Submit Button */
+.submit-ticket-btn {
+  height: 46px;
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px var(--color-primary-tint);
+  transition: all 0.2s ease;
+}
+
+.submit-ticket-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px var(--color-primary-tint);
+}
+
+/* Auto-Assignment Outcome Card */
+.assignment-result-card {
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid #10b981;
+  border-radius: 14px;
+  animation: fadeSlideUp 0.3s ease-out;
+}
+
+.result-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.result-card-header h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #10b981;
+  margin: 0;
+}
+
+.result-card-info {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 14px;
+}
+
+.result-ticket-preview {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.preview-lbl {
+  color: var(--color-text-muted);
+}
+
+.preview-val {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+@media (max-width: 768px) {
+  .priority-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-grid-two {
+    grid-template-columns: 1fr;
+  }
+
+  .create-ticket-card {
+    padding: 20px;
+  }
 }
