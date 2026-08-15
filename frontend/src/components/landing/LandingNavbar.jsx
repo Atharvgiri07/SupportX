@@ -17,8 +17,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const NAV_LINKS = [
   { name: 'Overview', href: '#' },
-  { name: 'Capabilities', href: '#footer-capabilities' },
+  { name: 'Workspaces', href: '#portals' },
 ];
+
 
 const LandingNavbar = () => {
   const { theme, toggleTheme } = useTheme();

@@ -37,29 +37,28 @@ const LandingFooter = () => {
             </p>
           </div>
 
-          {/* Core Capabilities */}
+          {/* Portals & Workspaces */}
           <div className="landing-footer-col">
-            <h4 className="landing-footer-heading">Enterprise Capabilities</h4>
+            <h4 className="landing-footer-heading">Portals & Workspaces</h4>
             <ul className="landing-footer-links">
-              <li><span className="footer-feature-item"><FiLayers size={13} /> Complete Ticket Lifecycle</span></li>
-              <li><span className="footer-feature-item"><FiCpu size={13} /> Automated Workload Balancing</span></li>
-              <li><span className="footer-feature-item"><FiShield size={13} /> Response & SLA Resolution</span></li>
-              <li><span className="footer-feature-item"><FiGrid size={13} /> Administrative Dashboard</span></li>
-              <li><span className="footer-feature-item"><FiAward size={13} /> Gamified Workforce Motivation</span></li>
+              <li><Link to="/login?role=employee"><FiLayers size={13} /> Employee Portal Login</Link></li>
+              <li><Link to="/register"><FiCheckCircle size={13} /> Employee Registration</Link></li>
+              <li><Link to="/login?role=admin"><FiShield size={13} /> Administrator Console</Link></li>
+              <li><Link to="/admin-register"><FiGrid size={13} /> Admin Provisioning</Link></li>
             </ul>
           </div>
 
-          {/* System Modules & Workflow */}
+          {/* Platform Security & Intelligence */}
           <div className="landing-footer-col">
-            <h4 className="landing-footer-heading">System Modules & Workflow</h4>
+            <h4 className="landing-footer-heading">Platform Highlights</h4>
             <ul className="landing-footer-links">
-              <li><span className="footer-feature-item"><FiInbox size={13} /> Real-Time Team Alert System</span></li>
-              <li><span className="footer-feature-item"><FiCpu size={13} /> Gemini AI Integration</span></li>
-              <li><span className="footer-feature-item"><FiCheckCircle size={13} /> Simple 4-Step Support Workflow</span></li>
-              <li><span className="footer-feature-item"><FiGrid size={13} /> Product Preview</span></li>
-              <li><span className="footer-feature-item"><FiHelpCircle size={13} /> Frequently Asked Questions</span></li>
+              <li><span className="footer-feature-item"><FiCpu size={13} /> Automated Workload Routing</span></li>
+              <li><span className="footer-feature-item"><FiShield size={13} /> SLA Overdue Management</span></li>
+              <li><span className="footer-feature-item"><FiAward size={13} /> Gamified Performance Scoring</span></li>
+              <li><span className="footer-feature-item"><FiLayers size={13} /> Enterprise Multi-View Calendar</span></li>
             </ul>
           </div>
+
 
           {/* Quick Access & Contact */}
           <div className="landing-footer-col">
