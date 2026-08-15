@@ -2,7 +2,19 @@ import { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Loader from '../components/Loader';
-import { FiSend, FiHash, FiMessageCircle, FiPlus } from 'react-icons/fi';
+import {
+  FiSend,
+  FiHash,
+  FiMessageSquare,
+  FiPlus,
+  FiSearch,
+  FiUsers,
+  FiSmile,
+  FiPaperclip,
+  FiShield,
+  FiUserCheck,
+  FiCheckCircle,
+} from 'react-icons/fi';
 import './Chat.css';
 
 const formatTime = (dateStr) => {
@@ -10,9 +22,11 @@ const formatTime = (dateStr) => {
   const d = new Date(dateStr);
   const now = new Date();
   const isToday = d.toDateString() === now.toDateString();
-  if (isToday) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (isToday) return 'Today at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
+
+const EMOJI_PRESETS = ['👍', '🙌', '🔥', '✅', '❤️', '🎉'];
 
 const Chat = () => {
   const { user } = useAuth();
@@ -24,6 +38,7 @@ const Chat = () => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef(null);
   const isFirstLoad = useRef(true);
 
@@ -68,7 +83,7 @@ const Chat = () => {
   }, [messages]);
 
   const handleSend = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     if (!text.trim() || sending) return;
     setSending(true);
     const sentText = text;
@@ -83,6 +98,10 @@ const Chat = () => {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleEmojiClick = (emoji) => {
+    setText((prev) => prev + ' ' + emoji);
   };
 
   const handleCreateRoom = (e) => {
@@ -101,92 +120,150 @@ const Chat = () => {
     isFirstLoad.current = true;
   };
 
+  const filteredMessages = searchQuery.trim()
+    ? messages.filter((m) =>
+        m.text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.sender?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : messages;
+
   return (
-    <div className="chat-page">
-      <div className="chat-sidebar">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px', marginBottom: 12 }}>
-          <h3 className="chat-sidebar-title" style={{ margin: 0, padding: 0 }}>
-            <FiMessageCircle size={16} /> Channels
-          </h3>
+    <div className="chat-page-root">
+      {/* Sidebar Channels */}
+      <div className="chat-sidebar-pane">
+        <div className="chat-sidebar-header">
+          <div className="sidebar-brand-row">
+            <FiMessageSquare size={18} color="var(--color-primary)" />
+            <h3 className="sidebar-title">Channels</h3>
+          </div>
           <button
             onClick={() => setShowAddRoom(!showAddRoom)}
-            style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}
-            title="Create Channel"
+            className="create-channel-btn"
+            title="Create New Channel"
           >
             <FiPlus size={16} />
           </button>
         </div>
 
         {showAddRoom && (
-          <form onSubmit={handleCreateRoom} style={{ padding: '0 12px 12px' }}>
-            <input
-              type="text"
-              placeholder="channel-name"
-              value={newRoomName}
-              onChange={e => setNewRoomName(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '6px 10px',
-                fontSize: 12,
-                borderRadius: 6,
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-bg)',
-                color: 'var(--color-text)',
-                outline: 'none'
-              }}
-            />
+          <form onSubmit={handleCreateRoom} className="create-room-form">
+            <div className="input-with-icon-wrapper">
+              <FiHash size={14} className="input-left-icon" />
+              <input
+                type="text"
+                placeholder="new-channel-name"
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                className="create-room-input"
+                autoFocus
+              />
+            </div>
           </form>
         )}
 
-        <div
-          className={`chat-room-item${activeRoom === 'global' ? ' active' : ''}`}
-          onClick={() => switchRoom('global')}
-        >
-          <FiHash size={15} />
-          <span>Global Chat</span>
-        </div>
-
-        {rooms.filter(r => r.room !== 'global').map(r => (
+        <div className="channels-list">
           <div
-            key={r.room}
-            className={`chat-room-item${activeRoom === r.room ? ' active' : ''}`}
-            onClick={() => switchRoom(r.room)}
+            className={`channel-item-row${activeRoom === 'global' ? ' active' : ''}`}
+            onClick={() => switchRoom('global')}
           >
-            <FiHash size={15} />
-            <span>{r.room}</span>
+            <span className="hash-icon">#</span>
+            <span className="channel-name">global-lounge</span>
+            <span className="online-dot-pill" title="Live Channel" />
           </div>
-        ))}
+
+          {rooms
+            .filter((r) => r.room !== 'global')
+            .map((r) => (
+              <div
+                key={r.room}
+                className={`channel-item-row${activeRoom === r.room ? ' active' : ''}`}
+                onClick={() => switchRoom(r.room)}
+              >
+                <span className="hash-icon">#</span>
+                <span className="channel-name">{r.room}</span>
+                {r.messageCount > 0 && (
+                  <span className="msg-count-badge">{r.messageCount}</span>
+                )}
+              </div>
+            ))}
+        </div>
       </div>
 
-      <div className="chat-main">
-        <div className="chat-main-header">
-          <FiHash size={18} />
-          <h3>{activeRoom === 'global' ? 'Global Chat' : `#${activeRoom}`}</h3>
+      {/* Main Chat View */}
+      <div className="chat-main-pane">
+        {/* Header */}
+        <div className="chat-header-bar">
+          <div className="header-channel-info">
+            <div className="header-channel-title">
+              <FiHash size={20} color="var(--color-primary)" />
+              <h2>{activeRoom === 'global' ? 'global-lounge' : activeRoom}</h2>
+              <span className="header-live-badge">
+                <span className="pulse-dot" /> Live
+              </span>
+            </div>
+            <p className="header-channel-desc">
+              Team communication & real-time ticket discussions.
+            </p>
+          </div>
+
+          <div className="header-search-wrapper">
+            <FiSearch size={15} className="header-search-icon" />
+            <input
+              type="text"
+              placeholder="Search in conversation..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="header-search-input"
+            />
+          </div>
         </div>
 
-        <div className="chat-messages">
-          {loading ? <Loader /> : (
+        {/* Messages Body */}
+        <div className="chat-messages-container">
+          {loading ? (
+            <div className="chat-loader-center">
+              <Loader />
+            </div>
+          ) : (
             <>
-              {messages.length === 0 && (
-                <p className="chat-empty">No messages yet in #{activeRoom}. Be the first to start the conversation! 👋</p>
+              {filteredMessages.length === 0 && (
+                <div className="chat-empty-state">
+                  <FiMessageSquare size={36} color="var(--color-text-muted)" />
+                  <h4>No messages found in #{activeRoom === 'global' ? 'global-lounge' : activeRoom}</h4>
+                  <p>Start the conversation or try a different search filter!</p>
+                </div>
               )}
-              {messages.map((msg) => {
+
+              {filteredMessages.map((msg) => {
                 const isMe = msg.sender?._id === user?._id;
+                const role = msg.sender?.role || 'employee';
+
                 return (
-                  <div key={msg._id} className={`chat-message${isMe ? ' is-me' : ''}`}>
-                    <div className="chat-avatar">
+                  <div
+                    key={msg._id}
+                    className={`chat-message-row${isMe ? ' is-outgoing' : ' is-incoming'}`}
+                  >
+                    <div className="chat-avatar-circle">
                       {msg.sender?.avatar ? (
-                        <img src={msg.sender.avatar} alt={msg.sender.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                        <img src={msg.sender.avatar} alt={msg.sender.name} className="avatar-img" />
                       ) : (
-                        msg.sender?.name?.charAt(0).toUpperCase() || '?'
+                        <span>{msg.sender?.name?.charAt(0).toUpperCase() || '?'}</span>
                       )}
                     </div>
-                    <div className="chat-bubble">
-                      <div className="chat-bubble-header">
-                        <span className="chat-sender">{isMe ? 'You' : (msg.sender?.name || 'Unknown')}</span>
-                        <span className="chat-time">{formatTime(msg.createdAt)}</span>
+
+                    <div className="chat-message-bubble">
+                      <div className="bubble-meta-row">
+                        <div className="sender-name-group">
+                          <span className="sender-name">{isMe ? 'You' : msg.sender?.name || 'Unknown'}</span>
+                          <span className={`role-badge ${role}`}>
+                            {role === 'admin' ? <FiShield size={10} /> : <FiUserCheck size={10} />}
+                            {role}
+                          </span>
+                        </div>
+                        <span className="bubble-timestamp">{formatTime(msg.createdAt)}</span>
                       </div>
-                      <p className="chat-text">{msg.text}</p>
+
+                      <div className="bubble-content-text">{msg.text}</div>
                     </div>
                   </div>
                 );
@@ -196,18 +273,42 @@ const Chat = () => {
           )}
         </div>
 
-        <form className="chat-input-bar" onSubmit={handleSend}>
-          <input
-            type="text"
-            value={text}
-            onChange={e => setText(e.target.value)}
-            placeholder={`Message #${activeRoom === 'global' ? 'Global Chat' : activeRoom}...`}
-            disabled={sending}
-          />
-          <button type="submit" disabled={!text.trim() || sending}>
-            <FiSend size={18} />
-          </button>
-        </form>
+        {/* Input Dock */}
+        <div className="chat-input-dock">
+          {/* Quick Emoji Bar */}
+          <div className="quick-emoji-bar">
+            {EMOJI_PRESETS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                className="emoji-chip"
+                onClick={() => handleEmojiClick(emoji)}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+
+          <form className="chat-input-form" onSubmit={handleSend}>
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={`Message #${activeRoom === 'global' ? 'global-lounge' : activeRoom}...`}
+              disabled={sending}
+              className="chat-text-input"
+            />
+
+            <button
+              type="submit"
+              className="chat-send-btn"
+              disabled={!text.trim() || sending}
+            >
+              <FiSend size={16} />
+              <span>Send</span>
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

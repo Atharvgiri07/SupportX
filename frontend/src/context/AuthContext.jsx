@@ -16,8 +16,12 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email, password, totpCode) => {
-    const { data } = await api.post('/auth/login', { email, password, totpCode });
+  const login = async (email, password, totpCode, role, adminSecurityKey) => {
+    const payload = { email, password, totpCode, role };
+    if (role === 'admin' && adminSecurityKey) {
+      payload.adminSecurityKey = adminSecurityKey;
+    }
+    const { data } = await api.post('/auth/login', payload);
 
     if (data.require2FA) {
       return data; // Requires 2FA verification challenge step

@@ -441,6 +441,113 @@
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
+   ROLE SELECTOR TABS (Employee / Admin)
+   ─────────────────────────────────────────────────────────────────────────── */
+.auth-role-tabs {
+  display: flex;
+  gap: 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 22px;
+}
+
+.auth-role-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-role-tab:hover:not(.active) {
+  color: var(--color-text);
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.auth-role-tab.active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
+}
+
+[data-theme='dark'] .auth-role-tab.active {
+  background: var(--color-surface);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   ADMIN SECURITY KEY FIELD
+   ─────────────────────────────────────────────────────────────────────────── */
+.auth-admin-key-field {
+  animation: fadeSlideUp 0.25s ease-out;
+}
+
+.auth-admin-key-field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-admin-key-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+  display: block;
+  font-style: italic;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   REGISTER NOTE (Employee-only notice)
+   ─────────────────────────────────────────────────────────────────────────── */
+.auth-register-note {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--color-bg);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   BACK TO HOME LINK
+   ─────────────────────────────────────────────────────────────────────────── */
+.auth-back-home {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.auth-back-home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.auth-back-home-link:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-tint);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
    RESPONSIVE LAYOUT BREAKPOINTS
    ─────────────────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
@@ -473,4 +580,14 @@
   .auth-card-title {
     font-size: 20px;
   }
+
+  .auth-role-tabs {
+    margin-bottom: 18px;
+  }
+
+  .auth-role-tab {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
 }
+

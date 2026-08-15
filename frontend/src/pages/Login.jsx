@@ -15,6 +15,8 @@ import {
   FiMoon,
   FiMail,
   FiArrowRight,
+  FiArrowLeft,
+  FiUser,
 } from 'react-icons/fi';
 import './Auth.css';
 
@@ -24,9 +26,12 @@ const Login = () => {
   const [totpCode, setTotpCode] = useState('');
   const [require2FA, setRequire2FA] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showSecurityKey, setShowSecurityKey] = useState(false);
   const [capsLockActive, setCapsLockActive] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('employee');
+  const [adminSecurityKey, setAdminSecurityKey] = useState('');
 
   const { user, login } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -42,18 +47,34 @@ const Login = () => {
     }
   };
 
+  const handleRoleChange = (role) => {
+    setSelectedRole(role);
+    setError('');
+    setAdminSecurityKey('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
     try {
-      const res = await login(email.trim().toLowerCase(), password, totpCode);
+      const res = await login(
+        email.trim().toLowerCase(),
+        password,
+        totpCode,
+        selectedRole,
+        selectedRole === 'admin' ? adminSecurityKey : undefined
+      );
       if (res && res.require2FA) {
         setRequire2FA(true);
         toast.info('Two-Factor Authentication code required');
         return;
       }
-      toast.success('Welcome back to SupportX');
+      toast.success(
+        selectedRole === 'admin'
+          ? 'Welcome back, Administrator'
+          : 'Welcome back to SupportX'
+      );
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid email or password');
@@ -95,7 +116,8 @@ const Login = () => {
           </h1>
 
           <p className="auth-hero-sub">
-            Manage tickets, team workflows, SLA compliance, and employee performance from one unified, high-performance workspace.
+            Manage tickets, team workflows, SLA compliance, and employee performance from one
+            unified, high-performance workspace.
           </p>
 
           <div className="auth-feature-list">
@@ -129,6 +151,28 @@ const Login = () => {
               <h2 className="auth-card-title">Welcome back</h2>
               <p className="auth-card-subtitle">Sign in to your SupportX workspace</p>
             </div>
+
+            {/* ── Role Selector Tabs ── */}
+            {!require2FA && (
+              <div className="auth-role-tabs">
+                <button
+                  type="button"
+                  className={`auth-role-tab${selectedRole === 'employee' ? ' active' : ''}`}
+                  onClick={() => handleRoleChange('employee')}
+                >
+                  <FiUser size={15} />
+                  <span>Employee</span>
+                </button>
+                <button
+                  type="button"
+                  className={`auth-role-tab${selectedRole === 'admin' ? ' active' : ''}`}
+                  onClick={() => handleRoleChange('admin')}
+                >
+                  <FiShield size={15} />
+                  <span>Admin</span>
+                </button>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="auth-form-body">
               {!require2FA ? (
@@ -185,6 +229,39 @@ const Login = () => {
                       </span>
                     )}
                   </div>
+
+                  {/* Admin Security Key (Only shown for Admin role) */}
+                  {selectedRole === 'admin' && (
+                    <div className="field auth-admin-key-field">
+                      <label htmlFor="adminSecurityKey">
+                        <FiShield size={13} color="var(--color-primary)" /> Admin Security Key
+                      </label>
+                      <div className="input-with-icon">
+                        <FiLock size={16} className="input-field-icon" />
+                        <input
+                          id="adminSecurityKey"
+                          type={showSecurityKey ? 'text' : 'password'}
+                          value={adminSecurityKey}
+                          onChange={(e) => setAdminSecurityKey(e.target.value)}
+                          placeholder="Enter admin security key"
+                          required
+                          autoComplete="off"
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle-btn"
+                          onClick={() => setShowSecurityKey(!showSecurityKey)}
+                          title={showSecurityKey ? 'Hide key' : 'Show key'}
+                          aria-label={showSecurityKey ? 'Hide security key' : 'Show security key'}
+                        >
+                          {showSecurityKey ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                        </button>
+                      </div>
+                      <span className="auth-admin-key-hint">
+                        Contact your system administrator for the security key
+                      </span>
+                    </div>
+                  )}
                 </>
               ) : (
                 /* 2FA Challenge Step */
@@ -230,6 +307,11 @@ const Login = () => {
                     <span>Verify 2FA Code</span>
                     <FiArrowRight size={16} />
                   </>
+                ) : selectedRole === 'admin' ? (
+                  <>
+                    <FiShield size={15} />
+                    <span>Secure Admin Login</span>
+                  </>
                 ) : (
                   <>
                     <span>Sign in</span>
@@ -244,6 +326,14 @@ const Login = () => {
                 Don't have an account? <Link to="/register">Create one</Link>
               </p>
             </div>
+          </div>
+
+          {/* Back to Home Link */}
+          <div className="auth-back-home">
+            <Link to="/" className="auth-back-home-link">
+              <FiArrowLeft size={14} />
+              <span>Back to Home</span>
+            </Link>
           </div>
 
           {/* Minimal Auth Footer */}

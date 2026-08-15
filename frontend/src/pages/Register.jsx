@@ -15,12 +15,12 @@ import {
   FiMoon,
   FiArrowRight,
   FiAlertTriangle,
-  FiBriefcase,
+  FiArrowLeft,
 } from 'react-icons/fi';
 import './Auth.css';
 
 const Register = () => {
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'employee' });
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +40,7 @@ const Register = () => {
     setError('');
     setSubmitting(true);
     try {
-      await register(form);
+      await register({ ...form, role: 'employee' });
       toast.success('Account created successfully');
       navigate('/');
     } catch (err) {
@@ -181,18 +181,6 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Role Selector */}
-              <div className="field">
-                <label htmlFor="role">Role</label>
-                <div className="input-with-icon">
-                  <FiBriefcase size={16} className="input-field-icon" />
-                  <select id="role" name="role" value={form.role} onChange={handleChange} className="select-input">
-                    <option value="employee">Employee</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-              </div>
-
               {/* Error Alert Box */}
               {error && (
                 <div className="auth-error-alert" role="alert">
@@ -219,10 +207,21 @@ const Register = () => {
             </form>
 
             <div className="auth-card-footer">
+              <p className="auth-register-note">
+                Employee accounts only. Admin accounts are created by administrators.
+              </p>
               <p>
                 Already have an account? <Link to="/login">Sign in</Link>
               </p>
             </div>
+          </div>
+
+          {/* Back to Home Link */}
+          <div className="auth-back-home">
+            <Link to="/" className="auth-back-home-link">
+              <FiArrowLeft size={14} />
+              <span>Back to Home</span>
+            </Link>
           </div>
 
           {/* Minimal Auth Footer */}

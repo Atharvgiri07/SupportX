@@ -38,7 +38,8 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    const assignedRole = role === 'admin' ? 'admin' : 'employee';
+    // Public registration is employee-only. Admin accounts are created by administrators.
+    const assignedRole = 'employee';
 
     const user = await User.create({
       name: name.trim(),
@@ -73,7 +74,7 @@ const registerUser = async (req, res) => {
 // @access Public
 const loginUser = async (req, res) => {
   try {
-    const { email, password, totpCode } = req.body;
+    const { email, password, totpCode, role, adminSecurityKey } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
@@ -108,6 +109,24 @@ const loginUser = async (req, res) => {
     // Check account active status
     if (!user.isActive) {
       return res.status(401).json({ message: 'Account is deactivated. Please contact administrator.' });
+    }
+
+    // Role-specific validation
+    const selectedRole = role || 'employee';
+
+    if (selectedRole === 'admin') {
+      // Admin login: verify DB role + security key
+      if (user.role !== 'admin' || !adminSecurityKey || adminSecurityKey !== process.env.ADMIN_SECURITY_KEY) {
+        return res.status(401).json({ message: 'Invalid administrator credentials.' });
+      }
+    } else {
+      // Employee login: verify DB role + department assignment
+      if (user.role !== 'employee') {
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
+      if (!user.department) {
+        return res.status(403).json({ message: 'Your employee account is not assigned to a department. Please contact an administrator.' });
+      }
     }
 
     // 2FA Verification if enabled
