@@ -8,10 +8,12 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import AdminRegister from './pages/AdminRegister';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Home from './pages/Home';
 import Landing from './pages/Landing';
+
 import MyTickets from './pages/employee/MyTickets';
 import TicketDetail from './pages/employee/TicketDetail';
 import MyPerformance from './pages/employee/MyPerformance';
@@ -65,9 +67,11 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/admin-register" element={<AdminRegister />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/" element={<RootRoute />} />
+
               <Route
                 path="/tickets"
                 element={

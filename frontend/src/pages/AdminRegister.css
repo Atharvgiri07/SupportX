@@ -1,0 +1,354 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUPPORTX ADMIN REGISTRATION PORTAL STYLING
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.admin-reg-root {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+  padding: 24px;
+}
+
+/* Ambient glow */
+.admin-reg-root::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  right: -5%;
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.admin-reg-root::after {
+  content: '';
+  position: absolute;
+  bottom: -10%;
+  left: -5%;
+  width: 45%;
+  height: 45%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Top action bar */
+.admin-reg-top-bar {
+  max-width: 1140px;
+  width: 100%;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+}
+
+.admin-reg-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.admin-reg-back-link:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-tint);
+}
+
+.admin-reg-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-reg-theme-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Main Container Grid */
+.admin-reg-container {
+  max-width: 1140px;
+  width: 100%;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 56px;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  padding: 10px 0;
+}
+
+/* Hero Info Panel */
+.admin-reg-hero {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-reg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  width: fit-content;
+  margin-bottom: 20px;
+}
+
+.admin-reg-hero-title {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.admin-reg-gradient-text {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.admin-reg-hero-sub {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  margin-bottom: 28px;
+  max-width: 500px;
+}
+
+.admin-reg-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.admin-reg-perk-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.admin-reg-perk-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.admin-reg-perk-item h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 3px;
+  color: var(--color-text);
+}
+
+.admin-reg-perk-item p {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.admin-reg-security-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13px;
+}
+
+.security-icon-gold {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.admin-reg-security-banner strong {
+  display: block;
+  color: #f59e0b;
+  margin-bottom: 2px;
+}
+
+.admin-reg-security-banner p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+/* Card & Form */
+.admin-reg-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 32px 28px;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
+}
+
+.admin-reg-card-header {
+  margin-bottom: 20px;
+}
+
+.admin-reg-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: var(--color-text);
+}
+
+.admin-reg-card-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.admin-reg-card-header p {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.admin-reg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Password strength */
+.pwd-strength-bar-container {
+  margin-top: 6px;
+}
+
+.pwd-strength-bar {
+  height: 4px;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.pwd-strength-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 3px;
+  display: block;
+}
+
+/* Admin Key field */
+.admin-key-field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-key-caption {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+  display: block;
+}
+
+/* Checkbox */
+.admin-terms-row {
+  margin: 6px 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.checkbox-label input {
+  margin-top: 3px;
+  cursor: pointer;
+}
+
+.admin-submit-btn {
+  height: 44px;
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.admin-reg-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.admin-reg-footer a {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-reg-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .admin-reg-container {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+    gap: 24px;
+  }
+  .admin-reg-hero {
+    display: none;
+  }
+}

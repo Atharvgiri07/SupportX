@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   registerUser,
+  registerAdmin,
   loginUser,
   confirmPassword,
   forgotPassword,
@@ -19,7 +20,9 @@ const { requireAdmin } = require('../middleware/rbac');
 const { loginLimiter, passwordResetLimiter, twoFactorLimiter } = require('../middleware/rateLimiter');
 
 router.post('/register', registerUser);
+router.post('/register-admin', loginLimiter, registerAdmin);
 router.post('/login', loginLimiter, loginUser);
+
 router.post('/forgot-password', passwordResetLimiter, forgotPassword);
 router.post('/reset-password', passwordResetLimiter, resetPassword);
 router.post('/confirm-password', protect, confirmPassword);

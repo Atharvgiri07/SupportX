@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-toastify';
@@ -21,6 +21,9 @@ import {
 import './Auth.css';
 
 const Login = () => {
+  const [searchParams] = useSearchParams();
+  const initialRole = searchParams.get('role') === 'admin' ? 'admin' : 'employee';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [totpCode, setTotpCode] = useState('');
@@ -28,16 +31,25 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showSecurityKey, setShowSecurityKey] = useState(false);
   const [capsLockActive, setCapsLockActive] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('employee');
+  const [selectedRole, setSelectedRole] = useState(initialRole);
   const [adminSecurityKey, setAdminSecurityKey] = useState('');
 
   const { user, login } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const roleParam = searchParams.get('role');
+    if (roleParam === 'admin') {
+      setSelectedRole('admin');
+    }
+  }, [searchParams]);
+
   if (user) return <Navigate to="/" replace />;
+
 
   const handleKeyDown = (e) => {
     if (e.getModifierState && e.getModifierState('CapsLock')) {
@@ -262,6 +274,18 @@ const Login = () => {
                       </span>
                     </div>
                   )}
+                  {/* Remember Me */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '4px 0 0' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--color-text-muted)', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        style={{ cursor: 'pointer', borderRadius: '4px' }}
+                      />
+                      <span>Remember this device</span>
+                    </label>
+                  </div>
                 </>
               ) : (
                 /* 2FA Challenge Step */
@@ -323,7 +347,12 @@ const Login = () => {
 
             <div className="auth-card-footer">
               <p>
-                Don't have an account? <Link to="/register">Create one</Link>
+                Don't have an account?{' '}
+                {selectedRole === 'admin' ? (
+                  <Link to="/admin-register">Provision Admin Account</Link>
+                ) : (
+                  <Link to="/register">Create Employee Account</Link>
+                )}
               </p>
             </div>
           </div>
@@ -347,3 +376,4 @@ const Login = () => {
 };
 
 export default Login;
+

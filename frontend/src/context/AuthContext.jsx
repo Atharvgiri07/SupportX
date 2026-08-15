@@ -41,6 +41,14 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  const registerAdmin = async (payload) => {
+    const { data } = await api.post('/auth/register-admin', payload);
+    localStorage.setItem('supportx_token', data.token);
+    localStorage.setItem('supportx_user', JSON.stringify(data));
+    setUser(data);
+    return data;
+  };
+
   const updateUserState = (newData) => {
     setUser((prev) => {
       const merged = { ...prev, ...newData };
@@ -58,10 +66,11 @@ export const AuthProvider = ({ children }) => {
   const isAdmin = () => user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, updateUserState, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, login, register, registerAdmin, updateUserState, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
+
 };
 
 export const useAuth = () => {

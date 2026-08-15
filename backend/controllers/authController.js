@@ -69,6 +69,64 @@ const registerUser = async (req, res) => {
   }
 };
 
+// @desc   Public Administrator Registration — secured by server-side ADMIN_SECURITY_KEY
+// @route  POST /api/auth/register-admin
+// @access Public
+const registerAdmin = async (req, res) => {
+  try {
+    const { name, email, password, adminSecurityKey, department, phone, avatar } = req.body;
+
+    if (!name || !email || !password || !adminSecurityKey) {
+      return res.status(400).json({ message: 'Please fill all required fields, including the Admin Security Key.' });
+    }
+
+    // Verify Admin Security Key strictly on server
+    const serverKey = process.env.ADMIN_SECURITY_KEY;
+    if (!serverKey || adminSecurityKey !== serverKey) {
+      return res.status(401).json({ message: 'Invalid administrator security credentials.' });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
+      });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const userExists = await User.findOne({ email: cleanEmail });
+    if (userExists) {
+      return res.status(400).json({ message: 'User already exists with this email' });
+    }
+
+    const user = await User.create({
+      name: name.trim(),
+      email: cleanEmail,
+      password,
+      role: 'admin',
+      department: department || null,
+      phone: phone || '',
+      avatar: avatar || '',
+      tokenVersion: 0,
+    });
+
+    await logActivity(user._id, 'Admin Registered', `New administrator ${user.name} registered successfully`, req.ip);
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      department: user.department,
+      phone: user.phone,
+      avatar: user.avatar,
+      token: generateToken(user),
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+
 // @desc   Login user with Brute-force protection & 2FA support
 // @route  POST /api/auth/login
 // @access Public
@@ -500,6 +558,7 @@ const updateEmployeeDepartment = async (req, res) => {
 
 module.exports = {
   registerUser,
+  registerAdmin,
   loginUser,
   confirmPassword,
   forgotPassword,
@@ -512,3 +571,4 @@ module.exports = {
   changePassword,
   updateEmployeeDepartment,
 };
+
