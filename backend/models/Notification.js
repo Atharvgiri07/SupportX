@@ -35,4 +35,7 @@ const notificationSchema = new mongoose.Schema(
   }
 );
 
+// Compound index for fast per-user notification queries (fixes slow polling)
+notificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Notification', notificationSchema);

@@ -35,44 +35,56 @@ const DEFAULT_BADGES = [
 ];
 
 // Runs once on server startup — creates the default badge set if none exist yet.
-const seedBadges = async () => {
-  try {
-    const count = await Badge.countDocuments();
-    if (count === 0) {
-      await Badge.insertMany(DEFAULT_BADGES);
-      console.log(`🏅 Seeded ${DEFAULT_BADGES.length} default badges`);
+const seedBadges = async (retries = 3, delay = 2000) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const count = await Badge.countDocuments();
+      if (count === 0) {
+        await Badge.insertMany(DEFAULT_BADGES);
+        console.log(`🏅 Seeded ${DEFAULT_BADGES.length} default badges`);
+      }
+      return;
+    } catch (error) {
+      if (i === retries - 1) {
+        console.warn('⚠️  Badge seeding notice (will auto-seed on next activity):', error.message);
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
     }
-  } catch (error) {
-    console.error('Badge seeding failed:', error);
   }
 };
 
 // Call after any action that changes totalResolved/performanceScore.
 // Returns the badges newly earned in this call (for a toast/notification).
 const checkAndAwardBadges = async (userId) => {
-  const user = await User.findById(userId);
-  if (!user) return [];
+  try {
+    const user = await User.findById(userId);
+    if (!user) return [];
 
-  const allBadges = await Badge.find();
-  const newlyAwarded = [];
+    const allBadges = await Badge.find();
+    const newlyAwarded = [];
 
-  for (const badge of allBadges) {
-    const alreadyHas = user.badges.some((b) => b.toString() === badge._id.toString());
-    if (alreadyHas) continue;
+    for (const badge of allBadges) {
+      const alreadyHas = user.badges.some((b) => b.toString() === badge._id.toString());
+      if (alreadyHas) continue;
 
-    const currentValue = badge.criteria.type === 'totalResolved' ? user.totalResolved : user.performanceScore;
+      const currentValue = badge.criteria.type === 'totalResolved' ? user.totalResolved : user.performanceScore;
 
-    if (currentValue >= badge.criteria.threshold) {
-      user.badges.push(badge._id);
-      newlyAwarded.push(badge);
+      if (currentValue >= badge.criteria.threshold) {
+        user.badges.push(badge._id);
+        newlyAwarded.push(badge);
+      }
     }
-  }
 
-  if (newlyAwarded.length > 0) {
-    await user.save();
-  }
+    if (newlyAwarded.length > 0) {
+      await user.save();
+    }
 
-  return newlyAwarded;
+    return newlyAwarded;
+  } catch (err) {
+    console.warn('Badge check error:', err.message);
+    return [];
+  }
 };
 
 module.exports = { seedBadges, checkAndAwardBadges };

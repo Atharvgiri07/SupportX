@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import Loader from '../../components/Loader';
-import StatusBadge from '../../components/StatusBadge';
 import { toast } from 'react-toastify';
 import {
   FiChevronLeft,
@@ -12,36 +11,23 @@ import {
   FiClock,
   FiPlus,
   FiSearch,
-  FiFilter,
   FiDownload,
   FiPrinter,
-  FiCheckCircle,
-  FiAlertTriangle,
-  FiInbox,
-  FiTag,
   FiX,
   FiCheck,
-  FiLayers,
-  FiList,
-  FiGrid,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiTag,
+  FiBookmark,
+  FiArrowUpRight,
 } from 'react-icons/fi';
 import './Calendar.css';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const FULL_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
-
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 8); // 8 AM to 9 PM
-
-const PRIORITY_COLORS = {
-  Critical: { bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444', border: '#ef4444' },
-  High: { bg: 'rgba(245, 158, 11, 0.15)', text: '#f59e0b', border: '#f59e0b' },
-  Medium: { bg: 'rgba(59, 130, 246, 0.15)', text: '#3b82f6', border: '#3b82f6' },
-  Low: { bg: 'rgba(16, 185, 129, 0.15)', text: '#10b981', border: '#10b981' },
-};
 
 const Calendar = () => {
   const { user } = useAuth();
@@ -49,7 +35,6 @@ const Calendar = () => {
 
   // State
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('month'); // 'month' | 'week' | 'day' | 'agenda'
   const [tickets, setTickets] = useState([]);
   const [reminders, setReminders] = useState([]);
   const [customEvents, setCustomEvents] = useState(() => {
@@ -62,13 +47,6 @@ const Calendar = () => {
   });
   const [selectedDay, setSelectedDay] = useState(new Date().getDate());
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilters, setActiveFilters] = useState({
-    deadlines: true,
-    created: true,
-    resolved: true,
-    reminders: true,
-    meetings: true,
-  });
   const [loading, setLoading] = useState(true);
   const [showEventModal, setShowEventModal] = useState(false);
   const [newEvent, setNewEvent] = useState({
@@ -122,147 +100,140 @@ const Calendar = () => {
 
   // Navigation helpers
   const jumpToday = () => {
-    setCurrentDate(new Date());
-    setSelectedDay(new Date().getDate());
+    const now = new Date();
+    setCurrentDate(now);
+    setSelectedDay(now.getDate());
   };
 
   const handlePrev = () => {
-    if (viewMode === 'month') {
-      setCurrentDate(new Date(year, month - 1, 1));
-    } else if (viewMode === 'week') {
-      const next = new Date(currentDate);
-      next.setDate(next.getDate() - 7);
-      setCurrentDate(next);
-    } else if (viewMode === 'day') {
-      const next = new Date(currentDate);
-      next.setDate(next.getDate() - 1);
-      setCurrentDate(next);
-    }
+    setCurrentDate(new Date(year, month - 1, 1));
   };
 
   const handleNext = () => {
-    if (viewMode === 'month') {
-      setCurrentDate(new Date(year, month + 1, 1));
-    } else if (viewMode === 'week') {
-      const next = new Date(currentDate);
-      next.setDate(next.getDate() + 7);
-      setCurrentDate(next);
-    } else if (viewMode === 'day') {
-      const next = new Date(currentDate);
-      next.setDate(next.getDate() + 1);
-      setCurrentDate(next);
-    }
+    setCurrentDate(new Date(year, month + 1, 1));
   };
 
-  // Compile Unified Events by Date String YYYY-MM-DD
+  // Compile Unified Clean Events
   const unifiedEvents = useMemo(() => {
     const list = [];
+    const seenTicketDates = new Set();
 
-    // Ticket Created Events
-    if (activeFilters.created) {
-      tickets.forEach((t) => {
-        if (t.createdAt) {
+    // 1. SLA Deadlines (High Priority for Calendar View)
+    tickets.forEach((t) => {
+      if (t.dueDate) {
+        const dateStr = t.dueDate.substring(0, 10);
+        const isOverdue = ['Open', 'In Progress', 'Pending'].includes(t.status) && new Date(t.dueDate) < new Date();
+        const key = `due-${t._id}-${dateStr}`;
+        seenTicketDates.add(key);
+
+        list.push({
+          id: key,
+          ticketId: t._id,
+          title: t.title,
+          label: isOverdue ? `Overdue: ${t.title}` : `Due: ${t.title}`,
+          date: dateStr,
+          time: new Date(t.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: isOverdue ? 'overdue' : 'deadline',
+          category: 'Ticket SLA',
+          priority: t.priority || 'Critical',
+          status: t.status,
+          icon: isOverdue ? '⚠️' : '⏱️',
+          color: isOverdue ? '#ef4444' : '#f59e0b',
+        });
+      }
+    });
+
+    // 2. Ticket Resolutions
+    tickets.forEach((t) => {
+      if (t.resolvedAt) {
+        const dateStr = t.resolvedAt.substring(0, 10);
+        list.push({
+          id: `res-${t._id}-${dateStr}`,
+          ticketId: t._id,
+          title: t.title,
+          label: `Resolved: ${t.title}`,
+          date: dateStr,
+          time: new Date(t.resolvedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'resolved',
+          category: 'Resolution',
+          priority: t.priority || 'Low',
+          status: t.status,
+          icon: '✓',
+          color: '#10b981',
+        });
+      }
+    });
+
+    // 3. Ticket Creation (Only if no SLA on same day to avoid duplicate clutter)
+    tickets.forEach((t) => {
+      if (t.createdAt && !t.resolvedAt) {
+        const dateStr = t.createdAt.substring(0, 10);
+        if (!seenTicketDates.has(`due-${t._id}-${dateStr}`)) {
           list.push({
-            id: `ticket-create-${t._id}`,
+            id: `create-${t._id}-${dateStr}`,
             ticketId: t._id,
-            title: `Ticket Logged: ${t.title}`,
-            date: t.createdAt.substring(0, 10),
+            title: t.title,
+            label: `Ticket: ${t.title}`,
+            date: dateStr,
             time: new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            hour: new Date(t.createdAt).getHours(),
             type: 'created',
+            category: 'Support Ticket',
             priority: t.priority || 'Medium',
             status: t.status,
+            icon: '🎫',
             color: '#3b82f6',
           });
         }
-      });
-    }
+      }
+    });
 
-    // Ticket SLA Deadlines
-    if (activeFilters.deadlines) {
-      tickets.forEach((t) => {
-        if (t.dueDate) {
-          const isOverdue = ['Open', 'In Progress', 'Pending'].includes(t.status) && new Date(t.dueDate) < new Date();
-          list.push({
-            id: `ticket-due-${t._id}`,
-            ticketId: t._id,
-            title: `SLA Deadline: ${t.title}`,
-            date: t.dueDate.substring(0, 10),
-            time: new Date(t.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            hour: new Date(t.dueDate).getHours(),
-            type: isOverdue ? 'overdue' : 'deadline',
-            priority: t.priority || 'Critical',
-            status: t.status,
-            color: isOverdue ? '#ef4444' : '#f59e0b',
-            isOverdue,
-          });
-        }
-      });
-    }
-
-    // Ticket Resolutions
-    if (activeFilters.resolved) {
-      tickets.forEach((t) => {
-        if (t.resolvedAt) {
-          list.push({
-            id: `ticket-res-${t._id}`,
-            ticketId: t._id,
-            title: `Resolved: ${t.title}`,
-            date: t.resolvedAt.substring(0, 10),
-            time: new Date(t.resolvedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            hour: new Date(t.resolvedAt).getHours(),
-            type: 'resolved',
-            priority: t.priority || 'Low',
-            status: t.status,
-            color: '#10b981',
-          });
-        }
-      });
-    }
-
-    // Reminders
-    if (activeFilters.reminders) {
-      reminders.forEach((r) => {
-        if (r.reminderDate) {
-          list.push({
-            id: `reminder-${r._id}`,
-            title: `Reminder: ${r.title}`,
-            date: r.reminderDate.substring(0, 10),
-            time: new Date(r.reminderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            hour: new Date(r.reminderDate).getHours(),
-            type: 'reminder',
-            priority: 'Medium',
-            color: '#8b5cf6',
-            completed: r.isCompleted,
-          });
-        }
-      });
-    }
-
-    // Custom Meetings / Events
-    if (activeFilters.meetings) {
-      customEvents.forEach((ev) => {
+    // 4. Reminders
+    reminders.forEach((r) => {
+      if (r.reminderDate) {
         list.push({
-          id: ev.id,
-          title: ev.title,
-          date: ev.date,
-          time: ev.time || '09:00',
-          hour: parseInt(ev.time?.split(':')[0] || 9, 10),
-          type: ev.type || 'meeting',
-          priority: ev.priority || 'Medium',
-          color: ev.type === 'meeting' ? '#ec4899' : '#6366f1',
-          description: ev.description,
+          id: `reminder-${r._id}`,
+          title: r.title,
+          label: `Reminder: ${r.title}`,
+          date: r.reminderDate.substring(0, 10),
+          time: new Date(r.reminderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'reminder',
+          category: 'Reminder',
+          priority: 'Medium',
+          icon: '📌',
+          color: '#8b5cf6',
+          completed: r.isCompleted,
         });
+      }
+    });
+
+    // 5. Custom Meetings & Scheduled Events
+    customEvents.forEach((ev) => {
+      list.push({
+        id: ev.id,
+        title: ev.title,
+        label: ev.title,
+        date: ev.date,
+        time: ev.time || '09:00',
+        type: ev.type || 'meeting',
+        category: ev.type === 'meeting' ? 'Team Meeting' : 'Event',
+        priority: ev.priority || 'Medium',
+        icon: ev.type === 'meeting' ? '👥' : '📅',
+        color: ev.type === 'meeting' ? '#6366f1' : '#ec4899',
+        description: ev.description,
       });
-    }
+    });
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      return list.filter((item) => item.title.toLowerCase().includes(q));
+      return list.filter((item) =>
+        item.title.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q) ||
+        item.priority.toLowerCase().includes(q)
+      );
     }
 
     return list;
-  }, [tickets, reminders, customEvents, activeFilters, searchQuery]);
+  }, [tickets, reminders, customEvents, searchQuery]);
 
   // Group events by date string
   const eventsByDate = useMemo(() => {
@@ -289,7 +260,7 @@ const Calendar = () => {
     };
 
     setCustomEvents((prev) => [created, ...prev]);
-    toast.success('Event scheduled on calendar!');
+    toast.success('Event added to calendar');
     setShowEventModal(false);
     setNewEvent({
       title: '',
@@ -308,7 +279,7 @@ const Calendar = () => {
     unifiedEvents.forEach((ev) => {
       const cleanDate = ev.date.replace(/-/g, '');
       const timeClean = ev.time?.replace(/:/g, '') || '090000';
-      icsContent += `BEGIN:VEVENT\nSUMMARY:${ev.title}\nDTSTART:${cleanDate}T${timeClean}00Z\nDESCRIPTION:${ev.type.toUpperCase()} scheduled in SupportX\nSTATUS:CONFIRMED\nEND:VEVENT\n`;
+      icsContent += `BEGIN:VEVENT\nSUMMARY:${ev.title}\nDTSTART:${cleanDate}T${timeClean}00Z\nDESCRIPTION:${ev.category} in SupportX\nSTATUS:CONFIRMED\nEND:VEVENT\n`;
     });
 
     icsContent += `END:VCALENDAR`;
@@ -321,7 +292,7 @@ const Calendar = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Calendar exported to iCal (.ics) format!');
+    toast.success('Calendar exported (.ics)');
   };
 
   // Month calculations
@@ -337,141 +308,93 @@ const Calendar = () => {
   const selectedDateKey = getDateKey(selectedDay);
   const selectedDayEvents = eventsByDate[selectedDateKey] || [];
 
-  // Week View dates (7 days)
-  const currentWeekDays = useMemo(() => {
-    const start = new Date(currentDate);
-    start.setDate(start.getDate() - start.getDay()); // Sunday
-    const week = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      week.push(d);
-    }
-    return week;
-  }, [currentDate]);
-
   if (loading) return <Loader />;
 
   return (
-    <div className="enterprise-calendar-page">
-      {/* ── Top Command Bar ── */}
-      <div className="cal-top-bar">
-        <div className="cal-title-block">
-          <div className="cal-icon-badge">
-            <FiCalendar size={20} />
+    <div className="pro-calendar-container">
+      {/* ── Top Header Toolbar ── */}
+      <header className="pro-cal-header card">
+        <div className="pro-cal-title-wrapper">
+          <div className="pro-cal-icon">
+            <FiCalendar size={22} />
           </div>
           <div>
-            <h1>Enterprise Calendar</h1>
-            <p>Unified schedule for SLA deadlines, team meetings, reminders, and ticket milestones.</p>
+            <div className="pro-cal-title-row">
+              <h1 className="pro-cal-title">{MONTHS[month]} {year}</h1>
+              <span className="pro-cal-total-pill">{unifiedEvents.length} Total Events</span>
+            </div>
+            <p className="pro-cal-subtitle">Manage SLA milestones, schedule reviews, and track daily operational workload.</p>
           </div>
         </div>
 
-        <div className="cal-top-actions">
-          {/* Search */}
-          <div className="cal-search-box">
-            <FiSearch size={16} />
+        <div className="pro-cal-actions">
+          {/* Navigation Controls */}
+          <div className="pro-nav-controls">
+            <button className="pro-today-btn" onClick={jumpToday}>
+              Today
+            </button>
+            <div className="pro-nav-arrows">
+              <button className="pro-arrow-btn" onClick={handlePrev} title="Previous Month">
+                <FiChevronLeft size={17} />
+              </button>
+              <button className="pro-arrow-btn" onClick={handleNext} title="Next Month">
+                <FiChevronRight size={17} />
+              </button>
+            </div>
+          </div>
+
+          {/* Search Box */}
+          <div className="pro-search-box">
+            <FiSearch size={15} />
             <input
               type="text"
-              placeholder="Search schedule & tickets..."
+              placeholder="Search schedule..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="clear-search-btn">
-                <FiX size={14} />
+              <button onClick={() => setSearchQuery('')} className="pro-search-clear">
+                <FiX size={13} />
               </button>
             )}
           </div>
 
-          {/* Export & Print */}
-          <button className="btn btn-secondary cal-action-btn" onClick={handleExportICS} title="Export to Google/Outlook Calendar (.ics)">
-            <FiDownload size={15} />
-            <span className="hide-mobile">Export iCal</span>
-          </button>
-          <button className="btn btn-secondary cal-action-btn" onClick={() => window.print()} title="Print Calendar">
-            <FiPrinter size={15} />
-            <span className="hide-mobile">Print</span>
-          </button>
-
-          {/* Quick Add Button */}
-          <button className="btn btn-primary cal-action-btn" onClick={() => setShowEventModal(true)}>
-            <FiPlus size={16} />
-            <span>Schedule Event</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Sub Header: Controls & View Mode Tabs ── */}
-      <div className="cal-controls-row card">
-        <div className="cal-nav-group">
-          <button className="btn btn-secondary btn-sm today-btn" onClick={jumpToday}>
-            Today
-          </button>
-          <div className="cal-arrows">
-            <button className="cal-arrow-btn" onClick={handlePrev} aria-label="Previous">
-              <FiChevronLeft size={18} />
+          {/* Action Buttons */}
+          <div className="pro-btn-group">
+            <button className="btn btn-secondary pro-tool-btn" onClick={handleExportICS} title="Export (.ics)">
+              <FiDownload size={14} />
+              <span>Export</span>
             </button>
-            <button className="cal-arrow-btn" onClick={handleNext} aria-label="Next">
-              <FiChevronRight size={18} />
+            <button className="btn btn-secondary pro-tool-btn" onClick={() => window.print()} title="Print Schedule">
+              <FiPrinter size={14} />
+            </button>
+            <button className="btn btn-primary pro-add-btn" onClick={() => setShowEventModal(true)}>
+              <FiPlus size={16} />
+              <span>Add Event</span>
             </button>
           </div>
-          <h2 className="cal-month-title">
-            {MONTHS[month]} <span className="cal-year-text">{year}</span>
-          </h2>
         </div>
+      </header>
 
-        {/* View Switcher Tabs (Month, Week, Day, Agenda) */}
-        <div className="cal-view-tabs">
-          <button
-            className={`cal-view-tab ${viewMode === 'month' ? 'active' : ''}`}
-            onClick={() => setViewMode('month')}
-          >
-            <FiGrid size={15} />
-            <span>Month</span>
-          </button>
-          <button
-            className={`cal-view-tab ${viewMode === 'week' ? 'active' : ''}`}
-            onClick={() => setViewMode('week')}
-          >
-            <FiLayers size={15} />
-            <span>Week</span>
-          </button>
-          <button
-            className={`cal-view-tab ${viewMode === 'day' ? 'active' : ''}`}
-            onClick={() => setViewMode('day')}
-          >
-            <FiClock size={15} />
-            <span>Day</span>
-          </button>
-          <button
-            className={`cal-view-tab ${viewMode === 'agenda' ? 'active' : ''}`}
-            onClick={() => setViewMode('agenda')}
-          >
-            <FiList size={15} />
-            <span>Agenda</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Main Calendar Workspace ── */}
-      <div className="cal-workspace-layout">
-        {/* LEFT SIDEBAR: Mini Calendar & Filter Toggles */}
-        <aside className="cal-left-sidebar">
+      {/* ── Main Layout: Sidebar & Calendar Grid ── */}
+      <div className="pro-cal-grid-layout">
+        {/* LEFT SIDEBAR: Mini Calendar & Focus Card */}
+        <aside className="pro-cal-sidebar">
           {/* Mini Calendar Widget */}
-          <div className="card cal-mini-card">
-            <div className="mini-cal-header">
-              <span>{MONTHS[month].substring(0, 3)} {year}</span>
-              <div className="mini-nav-arrows">
+          <div className="card pro-mini-calendar">
+            <div className="pro-mini-header">
+              <span className="pro-mini-month">{MONTHS[month].substring(0, 3)} {year}</span>
+              <div className="pro-mini-arrows">
                 <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))}>‹</button>
                 <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))}>›</button>
               </div>
             </div>
-            <div className="mini-cal-grid">
+            <div className="pro-mini-grid">
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                <span key={i} className="mini-day-label">{d}</span>
+                <span key={i} className="pro-mini-day-label">{d}</span>
               ))}
               {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                <span key={`empty-mini-${i}`} className="mini-day-cell empty" />
+                <span key={`empty-${i}`} className="pro-mini-cell empty" />
               ))}
               {Array.from({ length: daysInCurrentMonth }).map((_, i) => {
                 const day = i + 1;
@@ -480,7 +403,7 @@ const Calendar = () => {
                 return (
                   <button
                     key={day}
-                    className={`mini-day-cell ${isToday(day) ? 'today' : ''} ${selectedDay === day ? 'selected' : ''} ${hasEv ? 'has-event' : ''}`}
+                    className={`pro-mini-cell ${isToday(day) ? 'is-today' : ''} ${selectedDay === day ? 'is-selected' : ''} ${hasEv ? 'has-event' : ''}`}
                     onClick={() => setSelectedDay(day)}
                   >
                     {day}
@@ -490,326 +413,164 @@ const Calendar = () => {
             </div>
           </div>
 
-          {/* Schedule Category Filter Toggles */}
-          <div className="card cal-filters-card">
-            <h4 className="cal-side-heading">
-              <FiFilter size={14} />
-              <span>Event Categories</span>
-            </h4>
-            <div className="cal-filter-list">
-              <label className="cal-filter-item">
-                <input
-                  type="checkbox"
-                  checked={activeFilters.deadlines}
-                  onChange={(e) => setActiveFilters({ ...activeFilters, deadlines: e.target.checked })}
-                />
-                <span className="color-dot dot-red" />
-                <span>SLA Deadlines</span>
-              </label>
-
-              <label className="cal-filter-item">
-                <input
-                  type="checkbox"
-                  checked={activeFilters.created}
-                  onChange={(e) => setActiveFilters({ ...activeFilters, created: e.target.checked })}
-                />
-                <span className="color-dot dot-blue" />
-                <span>Tickets Logged</span>
-              </label>
-
-              <label className="cal-filter-item">
-                <input
-                  type="checkbox"
-                  checked={activeFilters.resolved}
-                  onChange={(e) => setActiveFilters({ ...activeFilters, resolved: e.target.checked })}
-                />
-                <span className="color-dot dot-green" />
-                <span>Ticket Resolutions</span>
-              </label>
-
-              <label className="cal-filter-item">
-                <input
-                  type="checkbox"
-                  checked={activeFilters.meetings}
-                  onChange={(e) => setActiveFilters({ ...activeFilters, meetings: e.target.checked })}
-                />
-                <span className="color-dot dot-pink" />
-                <span>Team Meetings</span>
-              </label>
-
-              <label className="cal-filter-item">
-                <input
-                  type="checkbox"
-                  checked={activeFilters.reminders}
-                  onChange={(e) => setActiveFilters({ ...activeFilters, reminders: e.target.checked })}
-                />
-                <span className="color-dot dot-purple" />
-                <span>Personal Reminders</span>
-              </label>
+          {/* Focus Day Schedule Card */}
+          <div className="card pro-focus-card">
+            <div className="pro-focus-header">
+              <div className="pro-focus-date-badge">
+                <span className="focus-badge-day">{selectedDay}</span>
+                <span className="focus-badge-month">{MONTHS[month].substring(0, 3)}</span>
+              </div>
+              <div className="pro-focus-title-info">
+                <h3>{MONTHS[month]} {selectedDay}</h3>
+                <p>{selectedDayEvents.length} {selectedDayEvents.length === 1 ? 'activity' : 'activities'} scheduled</p>
+              </div>
             </div>
-          </div>
 
-          {/* Focus Day Upcoming Card */}
-          <div className="card cal-focus-card">
-            <h4 className="cal-side-heading">
-              <FiClock size={14} />
-              <span>{MONTHS[month]} {selectedDay} Schedule</span>
-            </h4>
-            {selectedDayEvents.length === 0 ? (
-              <p className="cal-empty-text">No items scheduled for this date.</p>
-            ) : (
-              <div className="cal-focus-items-list">
-                {selectedDayEvents.map((ev) => (
+            <div className="pro-focus-list">
+              {selectedDayEvents.length === 0 ? (
+                <div className="pro-focus-empty">
+                  <FiClock size={24} />
+                  <p>No tasks or events scheduled for this day.</p>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      setNewEvent((prev) => ({ ...prev, date: selectedDateKey }));
+                      setShowEventModal(true);
+                    }}
+                  >
+                    + Schedule Now
+                  </button>
+                </div>
+              ) : (
+                selectedDayEvents.map((ev) => (
                   <div
                     key={ev.id}
-                    className="cal-focus-item"
+                    className="pro-focus-item"
                     onClick={() => ev.ticketId && navigate(`/tickets/${ev.ticketId}`)}
                     style={{ cursor: ev.ticketId ? 'pointer' : 'default' }}
                   >
-                    <span className="focus-item-bar" style={{ backgroundColor: ev.color }} />
-                    <div className="focus-item-info">
-                      <p className="focus-item-title">{ev.title}</p>
-                      <span className="focus-item-time">{ev.time} · {ev.type}</span>
+                    <div className="pro-focus-item-dot" style={{ backgroundColor: ev.color }} />
+                    <div className="pro-focus-item-content">
+                      <div className="pro-focus-item-top">
+                        <span className="pro-focus-item-time">{ev.time}</span>
+                        <span className="pro-focus-category-tag" style={{ color: ev.color, borderColor: `${ev.color}40` }}>
+                          {ev.category}
+                        </span>
+                      </div>
+                      <h4 className="pro-focus-item-title">{ev.title}</h4>
+                      {ev.description && <p className="pro-focus-item-desc">{ev.description}</p>}
+                      {ev.ticketId && (
+                        <span className="pro-view-ticket-link">
+                          View Ticket Details <FiArrowUpRight size={12} />
+                        </span>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
           </div>
         </aside>
 
-        {/* MAIN CALENDAR DISPLAY VIEW */}
-        <main className="cal-main-viewport card">
-          {/* ════════════════════ MONTH VIEW ════════════════════ */}
-          {viewMode === 'month' && (
-            <div className="cal-month-view">
-              <div className="cal-weekday-headers">
-                {DAYS.map((d) => (
-                  <div key={d} className="cal-weekday-col">
-                    {d}
-                  </div>
-                ))}
+        {/* MAIN CALENDAR VIEWPORT */}
+        <main className="card pro-cal-main">
+          {/* Weekday Header Bar */}
+          <div className="pro-weekday-bar">
+            {DAYS.map((day) => (
+              <div key={day} className="pro-weekday-header">
+                {day}
               </div>
+            ))}
+          </div>
 
-              <div className="cal-month-cells-grid">
-                {/* Leading Days from Prev Month */}
-                {Array.from({ length: firstDayOfWeek }).map((_, i) => {
-                  const prevDateNum = daysInPrevMonth - firstDayOfWeek + i + 1;
-                  return (
-                    <div key={`prev-pad-${i}`} className="cal-grid-cell inactive-cell">
-                      <span className="day-number-tag opacity-dim">{prevDateNum}</span>
-                    </div>
-                  );
-                })}
+          {/* Month Cells Grid */}
+          <div className="pro-month-grid">
+            {/* Previous Month Padded Days */}
+            {Array.from({ length: firstDayOfWeek }).map((_, i) => {
+              const prevDateNum = daysInPrevMonth - firstDayOfWeek + i + 1;
+              return (
+                <div key={`prev-${i}`} className="pro-day-cell is-padding">
+                  <span className="pro-day-num opacity-muted">{prevDateNum}</span>
+                </div>
+              );
+            })}
 
-                {/* Current Month Active Days */}
-                {Array.from({ length: daysInCurrentMonth }).map((_, i) => {
-                  const day = i + 1;
-                  const dateStr = getDateKey(day);
-                  const dayEvs = eventsByDate[dateStr] || [];
-                  const isCurrent = isToday(day);
-                  const isSelected = selectedDay === day;
+            {/* Current Month Days */}
+            {Array.from({ length: daysInCurrentMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateStr = getDateKey(day);
+              const dayEvents = eventsByDate[dateStr] || [];
+              const isDayToday = isToday(day);
+              const isDaySelected = selectedDay === day;
 
-                  return (
-                    <div
-                      key={day}
-                      className={`cal-grid-cell ${isCurrent ? 'current-day' : ''} ${isSelected ? 'selected-day' : ''}`}
-                      onClick={() => setSelectedDay(day)}
-                    >
-                      <div className="cal-cell-top">
-                        <span className={`day-number-tag ${isCurrent ? 'today-pill' : ''}`}>
-                          {day}
+              return (
+                <div
+                  key={day}
+                  className={`pro-day-cell ${isDayToday ? 'is-today' : ''} ${isDaySelected ? 'is-selected' : ''}`}
+                  onClick={() => setSelectedDay(day)}
+                >
+                  <div className="pro-cell-header">
+                    <span className={`pro-day-num ${isDayToday ? 'today-pill' : ''}`}>
+                      {day}
+                    </span>
+                    {dayEvents.length > 0 && (
+                      <span className="pro-day-count-badge">
+                        {dayEvents.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Clean Event Chips */}
+                  <div className="pro-events-stack">
+                    {dayEvents.slice(0, 2).map((ev) => (
+                      <div
+                        key={ev.id}
+                        className="pro-event-chip"
+                        style={{
+                          backgroundColor: `${ev.color}15`,
+                          borderColor: `${ev.color}35`,
+                          borderLeftColor: ev.color,
+                        }}
+                        title={`${ev.time} · ${ev.label}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedDay(day);
+                          if (ev.ticketId) navigate(`/tickets/${ev.ticketId}`);
+                        }}
+                      >
+                        <span className="pro-chip-indicator" style={{ backgroundColor: ev.color }} />
+                        <span className="pro-chip-time">{ev.time}</span>
+                        <span className="pro-chip-title" style={{ color: 'var(--color-text)' }}>
+                          {ev.label}
                         </span>
-                        {dayEvs.length > 0 && (
-                          <span className="day-events-counter">{dayEvs.length}</span>
-                        )}
                       </div>
+                    ))}
 
-                      {/* Event Chips List (up to 3 chips visible) */}
-                      <div className="cal-cell-events-stack">
-                        {dayEvs.slice(0, 3).map((ev) => (
-                          <div
-                            key={ev.id}
-                            className="cal-event-chip"
-                            style={{
-                              backgroundColor: ev.color + '1a',
-                              color: ev.color,
-                              borderLeft: `3px solid ${ev.color}`,
-                            }}
-                            title={`${ev.title} (${ev.time})`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (ev.ticketId) navigate(`/tickets/${ev.ticketId}`);
-                            }}
-                          >
-                            <span className="chip-time">{ev.time}</span>
-                            <span className="chip-text">{ev.title}</span>
-                          </div>
-                        ))}
-                        {dayEvs.length > 3 && (
-                          <span className="cal-chip-overflow">+{dayEvs.length - 3} more</span>
-                        )}
+                    {dayEvents.length > 2 && (
+                      <div
+                        className="pro-chip-more"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedDay(day);
+                        }}
+                      >
+                        +{dayEvents.length - 2} more items
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ════════════════════ WEEK VIEW ════════════════════ */}
-          {viewMode === 'week' && (
-            <div className="cal-week-view">
-              <div className="cal-week-header-row">
-                <div className="time-col-spacer" />
-                {currentWeekDays.map((d, idx) => {
-                  const isDayToday = d.toDateString() === today.toDateString();
-                  return (
-                    <div key={idx} className={`week-header-day ${isDayToday ? 'today-header' : ''}`}>
-                      <span className="week-day-name">{DAYS[d.getDay()]}</span>
-                      <span className="week-day-num">{d.getDate()}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="cal-week-body-scroll">
-                {HOURS.map((hour) => (
-                  <div key={hour} className="cal-hour-row">
-                    <div className="hour-label-col">
-                      {hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
-                    </div>
-                    {currentWeekDays.map((d, dayIdx) => {
-                      const dStr = d.toISOString().substring(0, 10);
-                      const matchingEvents = (eventsByDate[dStr] || []).filter((ev) => ev.hour === hour);
-
-                      return (
-                        <div key={dayIdx} className="week-hour-slot">
-                          {matchingEvents.map((ev) => (
-                            <div
-                              key={ev.id}
-                              className="week-event-card"
-                              style={{
-                                backgroundColor: ev.color + '22',
-                                borderLeft: `3px solid ${ev.color}`,
-                                color: ev.color,
-                              }}
-                              onClick={() => ev.ticketId && navigate(`/tickets/${ev.ticketId}`)}
-                            >
-                              <strong>{ev.title}</strong>
-                              <span>{ev.time}</span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })}
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ════════════════════ DAY VIEW ════════════════════ */}
-          {viewMode === 'day' && (
-            <div className="cal-day-view">
-              <div className="cal-day-header">
-                <h2>{FULL_DAYS[currentDate.getDay()]}, {MONTHS[month]} {currentDate.getDate()}, {year}</h2>
-                <span className="day-summary-tag">{selectedDayEvents.length} items scheduled</span>
-              </div>
-
-              <div className="cal-day-timeline-scroll">
-                {HOURS.map((hour) => {
-                  const curDateKey = currentDate.toISOString().substring(0, 10);
-                  const hourEvents = (eventsByDate[curDateKey] || []).filter((ev) => ev.hour === hour);
-
-                  return (
-                    <div key={hour} className="day-hour-track">
-                      <div className="day-hour-time">
-                        {hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
-                      </div>
-                      <div className="day-hour-content">
-                        {hourEvents.map((ev) => (
-                          <div
-                            key={ev.id}
-                            className="day-event-block"
-                            style={{
-                              backgroundColor: ev.color + '1a',
-                              borderLeft: `4px solid ${ev.color}`,
-                              color: 'var(--color-text)',
-                            }}
-                            onClick={() => ev.ticketId && navigate(`/tickets/${ev.ticketId}`)}
-                          >
-                            <div className="day-block-header">
-                              <h4 style={{ color: ev.color }}>{ev.title}</h4>
-                              <span className="day-block-time">{ev.time}</span>
-                            </div>
-                            {ev.description && <p className="day-block-desc">{ev.description}</p>}
-                            {ev.status && <StatusBadge status={ev.status} />}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ════════════════════ AGENDA VIEW ════════════════════ */}
-          {viewMode === 'agenda' && (
-            <div className="cal-agenda-view">
-              <div className="agenda-header-banner">
-                <h3>Chronological Agenda & Milestone Stream</h3>
-                <p>All upcoming ticket deadlines, meetings, and scheduled operations.</p>
-              </div>
-
-              {unifiedEvents.length === 0 ? (
-                <div className="agenda-empty-state">
-                  <FiInbox size={36} />
-                  <p>No events found for the active filters.</p>
                 </div>
-              ) : (
-                <div className="agenda-items-timeline">
-                  {unifiedEvents.map((ev) => (
-                    <div
-                      key={ev.id}
-                      className="agenda-row-item"
-                      onClick={() => ev.ticketId && navigate(`/tickets/${ev.ticketId}`)}
-                      style={{ cursor: ev.ticketId ? 'pointer' : 'default' }}
-                    >
-                      <div className="agenda-date-badge">
-                        <span className="agenda-badge-month">{ev.date.substring(5, 7)}</span>
-                        <span className="agenda-badge-day">{ev.date.substring(8, 10)}</span>
-                      </div>
-
-                      <div className="agenda-item-body">
-                        <div className="agenda-item-title-row">
-                          <h4 style={{ color: ev.color }}>{ev.title}</h4>
-                          <span className="agenda-type-pill" style={{ borderColor: ev.color, color: ev.color }}>
-                            {ev.type}
-                          </span>
-                        </div>
-                        <p className="agenda-item-meta">
-                          <FiClock size={13} /> {ev.time} · Priority: <strong>{ev.priority}</strong>
-                          {ev.status && <span> · Status: <strong>{ev.status}</strong></span>}
-                        </p>
-                        {ev.description && <p className="agenda-item-desc">{ev.description}</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </main>
       </div>
 
-      {/* ── Quick Add Event / Meeting Modal ── */}
+      {/* ── Quick Add Event Modal ── */}
       {showEventModal && (
         <div className="cal-modal-backdrop" onClick={() => setShowEventModal(false)}>
           <div className="cal-modal-card card" onClick={(e) => e.stopPropagation()}>
             <div className="cal-modal-header">
-              <h3>Schedule New Event / Meeting</h3>
+              <h3>Schedule New Event</h3>
               <button className="cal-modal-close" onClick={() => setShowEventModal(false)}>
                 <FiX size={18} />
               </button>
@@ -820,7 +581,7 @@ const Calendar = () => {
                 <label>Event Title</label>
                 <input
                   type="text"
-                  placeholder="e.g. Weekly SLA Standup or Release Review"
+                  placeholder="e.g. Weekly Standup or Sprint Review"
                   value={newEvent.title}
                   onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                   required
@@ -880,7 +641,7 @@ const Calendar = () => {
               <div className="field">
                 <label>Description & Notes (Optional)</label>
                 <textarea
-                  placeholder="Agenda items, video conference links, or ticket references..."
+                  placeholder="Notes, agenda details, or meeting links..."
                   value={newEvent.description}
                   onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
                   rows={3}
